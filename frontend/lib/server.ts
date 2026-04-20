@@ -37,12 +37,25 @@ class ApiError extends Error {
 declare global {
   // eslint-disable-next-line no-var
   var __babyLandPrisma: PrismaClient | undefined;
+  // eslint-disable-next-line no-var
+  var __babyLandResponseCache: Map<string, { expiresAt: number; value: unknown }> | undefined;
 }
 
 export const prisma = globalThis.__babyLandPrisma ?? new PrismaClient();
 if (process.env.NODE_ENV !== 'production') {
   globalThis.__babyLandPrisma = prisma;
 }
+
+const responseCache = globalThis.__babyLandResponseCache ?? new Map<string, { expiresAt: number; value: unknown }>();
+if (process.env.NODE_ENV !== 'production') {
+  globalThis.__babyLandResponseCache = responseCache;
+}
+
+const cacheTtlMs = {
+  short: 15_000,
+  medium: 60_000,
+  long: 5 * 60_000
+} as const;
 
 type SessionUser = {
   id: string;
@@ -228,6 +241,32 @@ async function readJsonBody<T>(request: NextRequest): Promise<T> {
 
 function json(body: unknown, init?: ResponseInit) {
   return NextResponse.json(body, init);
+}
+
+function getCachedValue<T>(key: string): T | undefined {
+  const cached = responseCache.get(key);
+  if (!cached) {
+    return undefined;
+  }
+
+  if (cached.expiresAt <= Date.now()) {
+    responseCache.delete(key);
+    return undefined;
+  }
+
+  return cached.value as T;
+}
+
+function setCachedValue<T>(key: string, value: T, ttlMs: number) {
+  responseCache.set(key, { value, expiresAt: Date.now() + ttlMs });
+}
+
+function invalidateCacheByPrefix(prefixes: string[]) {
+  for (const key of responseCache.keys()) {
+    if (prefixes.some((prefix) => key.startsWith(prefix))) {
+      responseCache.delete(key);
+    }
+  }
 }
 
 async function handleUpload(request: NextRequest) {
@@ -866,6 +905,12 @@ async function handleProducts(request: NextRequest, segments: string[]) {
       where.featured = true;
     }
 
+    const key = `products:list:${request.nextUrl.searchParams.toString()}`;
+    const cached = getCachedValue<{ products: ProductDto[]; total: number; page: number; limit: number }>(key);
+    if (cached) {
+      return json(cached);
+    }
+
     const [products, total] = await prisma.$transaction([
       prisma.product.findMany({
         where,
@@ -882,16 +927,25 @@ async function handleProducts(request: NextRequest, segments: string[]) {
       prisma.product.count({ where })
     ]);
 
-    return json({
+    const payload = {
       products: products.map(serializeProduct),
       total,
       page,
       limit
-    });
+    };
+
+    setCachedValue(key, payload, cacheTtlMs.medium);
+    return json(payload);
   }
 
   if (request.method === 'GET' && segments.length === 2 && segments[1]) {
     const slug = decodeURIComponent(segments[1]);
+    const key = `products:detail:${slug}`;
+    const cached = getCachedValue<{ product: ProductDto }>(key);
+    if (cached) {
+      return json(cached);
+    }
+
     const product = await prisma.product.findUnique({
       where: { slug },
       include: {
@@ -906,7 +960,9 @@ async function handleProducts(request: NextRequest, segments: string[]) {
       throw new ApiError(404, 'Product not found');
     }
 
-    return json({ product: serializeProduct(product) });
+    const payload = { product: serializeProduct(product) };
+    setCachedValue(key, payload, cacheTtlMs.medium);
+    return json(payload);
   }
 
   throw new ApiError(404, 'Product route not found');
@@ -914,12 +970,20 @@ async function handleProducts(request: NextRequest, segments: string[]) {
 
 async function handleCategories(request: NextRequest, segments: string[]) {
   if (request.method === 'GET' && segments.length === 1) {
+    const key = 'categories:public';
+    const cached = getCachedValue<{ categories: CategoryDto[] }>(key);
+    if (cached) {
+      return json(cached);
+    }
+
     const categories = await prisma.category.findMany({
       orderBy: { name: 'asc' },
       include: { _count: { select: { products: true } } }
     });
 
-    return json({ categories: categories.map(serializeCategory) });
+    const payload = { categories: categories.map(serializeCategory) };
+    setCachedValue(key, payload, cacheTtlMs.medium);
+    return json(payload);
   }
 
   if (request.method === 'GET' && segments[0] === 'admin' && segments[1] === 'categories') {
@@ -1111,11 +1175,44 @@ async function handleOrders(request: NextRequest, segments: string[]) {
       return order;
     });
 
+    if (user?.id) {
+      invalidateCacheByPrefix([`orders:me:${user.id}`]);
+    }
+    invalidateCacheByPrefix(['admin:analytics', 'admin:orders', 'admin:order:', 'products:list:', 'products:detail:']);
+
     return json({ order: serializeOrder(createdOrder) });
   }
 
   if (request.method === 'GET' && segments[1] === 'me') {
     const user = await requireSessionUser(request);
+    const key = `orders:me:${user.id}`;
+    const cached = getCachedValue<{
+      orders: Array<{
+        id: string;
+        totalPrice: string;
+        orderStatus: OrderStatus;
+        createdAt: string;
+        items: Array<{
+          id: string;
+          productId: string;
+          productName: string;
+          quantity: number;
+          price: string;
+          imageUrl: string | null;
+          size: SizeOption;
+        }>;
+        statusLog: Array<{
+          id: string;
+          status: OrderStatus;
+          note: string | null;
+          createdAt: string;
+        }>;
+      }>;
+    }>(key);
+    if (cached) {
+      return json(cached);
+    }
+
     const orders = await prisma.order.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: 'desc' },
@@ -1126,7 +1223,7 @@ async function handleOrders(request: NextRequest, segments: string[]) {
       }
     });
 
-    return json({
+    const payload = {
       orders: orders.map((order) => ({
         id: order.id,
         totalPrice: order.totalPrice.toString(),
@@ -1148,7 +1245,10 @@ async function handleOrders(request: NextRequest, segments: string[]) {
           createdAt: entry.createdAt.toISOString()
         }))
       }))
-    });
+    };
+
+    setCachedValue(key, payload, cacheTtlMs.short);
+    return json(payload);
   }
 
   throw new ApiError(404, 'Order route not found');
@@ -1157,6 +1257,20 @@ async function handleOrders(request: NextRequest, segments: string[]) {
 async function handleReviews(request: NextRequest, segments: string[]) {
   if (request.method === 'GET' && segments.length === 1) {
     const limit = Math.min(50, Math.max(1, asNumber(request.nextUrl.searchParams.get('limit'), 3)));
+    const key = `reviews:public:${limit}`;
+    const cached = getCachedValue<{
+      reviews: Array<{
+        id: string;
+        rating: number;
+        comment: string | null;
+        user: { name: string };
+        product: { name: string; slug: string };
+      }>;
+    }>(key);
+    if (cached) {
+      return json(cached);
+    }
+
     const reviews = await prisma.review.findMany({
       take: limit,
       orderBy: { createdAt: 'desc' },
@@ -1166,7 +1280,7 @@ async function handleReviews(request: NextRequest, segments: string[]) {
       }
     });
 
-    return json({
+    const payload = {
       reviews: reviews.map((review) => ({
         id: review.id,
         rating: review.rating,
@@ -1174,25 +1288,39 @@ async function handleReviews(request: NextRequest, segments: string[]) {
         user: { name: review.user.name },
         product: { name: review.product.name, slug: review.product.slug }
       }))
-    });
+    };
+
+    setCachedValue(key, payload, cacheTtlMs.short);
+    return json(payload);
   }
 
   if (request.method === 'GET' && segments[1] === 'product' && segments[2]) {
     const productId = segments[2];
+    const key = `reviews:product:${productId}`;
+    const cached = getCachedValue<{
+      reviews: Array<{ id: string; rating: number; comment: string | null; user: { name: string } }>;
+    }>(key);
+    if (cached) {
+      return json(cached);
+    }
+
     const reviews = await prisma.review.findMany({
       where: { productId },
       orderBy: { createdAt: 'desc' },
       include: { user: { select: { name: true } } }
     });
 
-    return json({
+    const payload = {
       reviews: reviews.map((review) => ({
         id: review.id,
         rating: review.rating,
         comment: review.comment,
         user: { name: review.user.name }
       }))
-    });
+    };
+
+    setCachedValue(key, payload, cacheTtlMs.short);
+    return json(payload);
   }
 
   if (request.method === 'POST' && segments[1] === 'product' && segments[2]) {
@@ -1218,6 +1346,8 @@ async function handleReviews(request: NextRequest, segments: string[]) {
       create: { userId: user.id, productId, rating, comment: body.comment?.trim() || null }
     });
 
+    invalidateCacheByPrefix(['reviews:public:', `reviews:product:${productId}`, 'products:detail:']);
+
     return json({ review });
   }
 
@@ -1225,8 +1355,16 @@ async function handleReviews(request: NextRequest, segments: string[]) {
 }
 
 async function getHomepageSettings() {
+  const key = 'settings:homepage';
+  const cached = getCachedValue<Record<string, unknown>>(key);
+  if (cached) {
+    return cached;
+  }
+
   const settings = await prisma.siteSetting.findMany({ where: { group: 'homepage' } });
-  return Object.fromEntries(settings.map((setting) => [setting.key, JSON.parse(setting.value)]));
+  const payload = Object.fromEntries(settings.map((setting) => [setting.key, JSON.parse(setting.value)]));
+  setCachedValue(key, payload, cacheTtlMs.long);
+  return payload;
 }
 
 async function handleSettings(request: NextRequest, segments: string[]) {
@@ -1261,6 +1399,8 @@ async function handleSettings(request: NextRequest, segments: string[]) {
         )
       );
 
+      invalidateCacheByPrefix(['settings:homepage']);
+
       return json({ settings: await getHomepageSettings() });
     }
   }
@@ -1281,6 +1421,16 @@ async function handleAdmin(request: NextRequest, segments: string[]) {
   await requireAdminAccess(request);
 
   if (request.method === 'GET' && segments[1] === 'analytics') {
+    const key = 'admin:analytics';
+    const cached = getCachedValue<{
+      totalOrders: number;
+      totalSales: string;
+      topProducts: Array<{ productId: string; productName: string; _sum: { quantity: number } }>;
+    }>(key);
+    if (cached) {
+      return json(cached);
+    }
+
     const [totalOrders, totalSalesAggregate, topProducts] = await prisma.$transaction([
       prisma.order.count(),
       prisma.order.aggregate({ _sum: { totalPrice: true }, where: { orderStatus: { not: 'CANCELLED' } } }),
@@ -1292,7 +1442,7 @@ async function handleAdmin(request: NextRequest, segments: string[]) {
       })
     ]);
 
-    return json({
+    const payload = {
       totalOrders,
       totalSales: totalSalesAggregate._sum.totalPrice?.toString() || '0.00',
       topProducts: topProducts.map((item) => ({
@@ -1300,10 +1450,28 @@ async function handleAdmin(request: NextRequest, segments: string[]) {
         productName: item.productName,
         _sum: { quantity: item._sum?.quantity ?? 0 }
       }))
-    });
+    };
+
+    setCachedValue(key, payload, cacheTtlMs.short);
+    return json(payload);
   }
 
   if (request.method === 'GET' && segments[1] === 'orders' && segments.length === 2) {
+    const key = 'admin:orders';
+    const cached = getCachedValue<{
+      orders: Array<{
+        id: string;
+        orderStatus: OrderStatus;
+        totalPrice: string;
+        createdAt: string;
+        user: { name: string; email: string } | null;
+        items: Array<{ id: string; productName: string; quantity: number; price: string }>;
+      }>;
+    }>(key);
+    if (cached) {
+      return json(cached);
+    }
+
     const orders = await prisma.order.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
@@ -1312,7 +1480,7 @@ async function handleAdmin(request: NextRequest, segments: string[]) {
       }
     });
 
-    return json({
+    const payload = {
       orders: orders.map((order) => ({
         id: order.id,
         orderStatus: order.orderStatus,
@@ -1326,10 +1494,19 @@ async function handleAdmin(request: NextRequest, segments: string[]) {
           price: item.price.toString()
         }))
       }))
-    });
+    };
+
+    setCachedValue(key, payload, cacheTtlMs.short);
+    return json(payload);
   }
 
   if (request.method === 'GET' && segments[1] === 'orders' && segments[2]) {
+    const key = `admin:order:${segments[2]}`;
+    const cached = getCachedValue<{ order: OrderDto }>(key);
+    if (cached) {
+      return json(cached);
+    }
+
     const order = await prisma.order.findUnique({
       where: { id: segments[2] },
       include: {
@@ -1345,7 +1522,9 @@ async function handleAdmin(request: NextRequest, segments: string[]) {
       throw new ApiError(404, 'Order not found');
     }
 
-    return json({ order: serializeOrder(order) });
+    const payload = { order: serializeOrder(order) };
+    setCachedValue(key, payload, cacheTtlMs.short);
+    return json(payload);
   }
 
   if (request.method === 'PATCH' && segments[1] === 'orders' && segments[2] && segments[3] === 'status') {
@@ -1368,16 +1547,26 @@ async function handleAdmin(request: NextRequest, segments: string[]) {
       }
     });
 
+    invalidateCacheByPrefix(['admin:orders', `admin:order:${segments[2]}`, 'admin:analytics', 'orders:me:']);
+
     return json({ order: serializeOrder(order) });
   }
 
   if (request.method === 'GET' && segments[1] === 'products' && segments.length === 2) {
+    const key = 'admin:products';
+    const cached = getCachedValue<{ products: ProductDto[] }>(key);
+    if (cached) {
+      return json(cached);
+    }
+
     const products = await prisma.product.findMany({
       include: await collectProductInclude(),
       orderBy: { createdAt: 'desc' }
     });
 
-    return json({ products: products.map(serializeProduct) });
+    const payload = { products: products.map(serializeProduct) };
+    setCachedValue(key, payload, cacheTtlMs.short);
+    return json(payload);
   }
 
   if (request.method === 'POST' && segments[1] === 'products' && segments.length === 2) {
@@ -1417,6 +1606,8 @@ async function handleAdmin(request: NextRequest, segments: string[]) {
       },
       include: await collectProductInclude()
     });
+
+    invalidateCacheByPrefix(['admin:products', 'products:list:', 'products:detail:', 'admin:categories', 'categories:public']);
 
     return json({ product: serializeProduct(product) });
   }
@@ -1463,6 +1654,8 @@ async function handleAdmin(request: NextRequest, segments: string[]) {
       include: await collectProductInclude()
     });
 
+    invalidateCacheByPrefix(['admin:products', 'products:list:', 'products:detail:']);
+
     return json({ product: serializeProduct(product) });
   }
 
@@ -1482,16 +1675,26 @@ async function handleAdmin(request: NextRequest, segments: string[]) {
       prisma.product.delete({ where: { id: productId } })
     ]);
 
+    invalidateCacheByPrefix(['admin:products', 'products:list:', 'products:detail:', 'admin:analytics', 'reviews:public:', 'reviews:product:']);
+
     return json({ ok: true });
   }
 
   if (request.method === 'GET' && segments[1] === 'categories' && segments.length === 2) {
+    const key = 'admin:categories';
+    const cached = getCachedValue<{ categories: CategoryDto[] }>(key);
+    if (cached) {
+      return json(cached);
+    }
+
     const categories = await prisma.category.findMany({
       orderBy: { name: 'asc' },
       include: { _count: { select: { products: true } } }
     });
 
-    return json({ categories: categories.map(serializeCategory) });
+    const payload = { categories: categories.map(serializeCategory) };
+    setCachedValue(key, payload, cacheTtlMs.short);
+    return json(payload);
   }
 
   if (request.method === 'POST' && segments[1] === 'categories' && segments.length === 2) {
@@ -1500,6 +1703,7 @@ async function handleAdmin(request: NextRequest, segments: string[]) {
       data: { name: body.name.trim(), slug: body.slug.trim() },
       include: { _count: { select: { products: true } } }
     });
+    invalidateCacheByPrefix(['admin:categories', 'categories:public', 'products:list:']);
     return json({ category: serializeCategory(category) });
   }
 
@@ -1510,6 +1714,7 @@ async function handleAdmin(request: NextRequest, segments: string[]) {
       data: { name: body.name.trim(), slug: body.slug.trim() },
       include: { _count: { select: { products: true } } }
     });
+    invalidateCacheByPrefix(['admin:categories', 'categories:public', 'products:list:', 'products:detail:']);
     return json({ category: serializeCategory(category) });
   }
 
@@ -1520,16 +1725,32 @@ async function handleAdmin(request: NextRequest, segments: string[]) {
     }
 
     await prisma.category.delete({ where: { id: segments[2] } });
+    invalidateCacheByPrefix(['admin:categories', 'categories:public', 'products:list:']);
     return json({ ok: true });
   }
 
   if (request.method === 'GET' && segments[1] === 'users' && segments.length === 2) {
+    const key = 'admin:users';
+    const cached = getCachedValue<{
+      users: Array<{
+        id: string;
+        name: string;
+        email: string;
+        role: Role;
+        createdAt: string;
+        _count: { orders: number; reviews: number };
+      }>;
+    }>(key);
+    if (cached) {
+      return json(cached);
+    }
+
     const users = await prisma.user.findMany({
       orderBy: { createdAt: 'desc' },
       include: { _count: { select: { orders: true, reviews: true } } }
     });
 
-    return json({
+    const payload = {
       users: users.map((user) => ({
         id: user.id,
         name: user.name,
@@ -1538,17 +1759,36 @@ async function handleAdmin(request: NextRequest, segments: string[]) {
         createdAt: user.createdAt.toISOString(),
         _count: { orders: user._count.orders, reviews: user._count.reviews }
       }))
-    });
+    };
+
+    setCachedValue(key, payload, cacheTtlMs.short);
+    return json(payload);
   }
 
   if (request.method === 'PATCH' && segments[1] === 'users' && segments[2] && segments[3] === 'role') {
     const body = await readJsonBody<{ role: Role }>(request);
     const role = body.role === 'ADMIN' ? 'ADMIN' : 'CUSTOMER';
     const user = await prisma.user.update({ where: { id: segments[2] }, data: { role } });
+    invalidateCacheByPrefix(['admin:users']);
     return json({ user: serializeSessionUser(user) });
   }
 
   if (request.method === 'GET' && segments[1] === 'reviews' && segments.length === 2) {
+    const key = 'admin:reviews';
+    const cached = getCachedValue<{
+      reviews: Array<{
+        id: string;
+        rating: number;
+        comment: string | null;
+        createdAt: string;
+        user: { id: string; name: string; email: string };
+        product: { id: string; name: string; slug: string };
+      }>;
+    }>(key);
+    if (cached) {
+      return json(cached);
+    }
+
     const reviews = await prisma.review.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
@@ -1557,7 +1797,7 @@ async function handleAdmin(request: NextRequest, segments: string[]) {
       }
     });
 
-    return json({
+    const payload = {
       reviews: reviews.map((review) => ({
         id: review.id,
         rating: review.rating,
@@ -1566,11 +1806,15 @@ async function handleAdmin(request: NextRequest, segments: string[]) {
         user: review.user,
         product: review.product
       }))
-    });
+    };
+
+    setCachedValue(key, payload, cacheTtlMs.short);
+    return json(payload);
   }
 
   if (request.method === 'DELETE' && segments[1] === 'reviews' && segments[2]) {
     await prisma.review.delete({ where: { id: segments[2] } });
+    invalidateCacheByPrefix(['admin:reviews', 'reviews:public:', 'reviews:product:', 'products:detail:']);
     return json({ ok: true });
   }
 

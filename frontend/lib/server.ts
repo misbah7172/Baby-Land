@@ -243,13 +243,40 @@ async function handleUpload(request: NextRequest) {
   }
 
   const file = fileEntry;
-  const image = await prisma.imageAsset.create({
-    data: {
-      fileName: file.name || 'upload.jpg',
-      mimeType: file.type || 'image/jpeg',
-      data: Buffer.from(await file.arrayBuffer())
+  if (file.size > 4 * 1024 * 1024) {
+    throw new ApiError(413, 'Image is too large. Use files up to 4 MB.');
+  }
+
+  const imageData = {
+    fileName: file.name || 'upload.jpg',
+    mimeType: file.type || 'image/jpeg',
+    data: Buffer.from(await file.arrayBuffer())
+  };
+
+  let image;
+  try {
+    image = await prisma.imageAsset.create({ data: imageData });
+  } catch (error) {
+    // Self-heal when the new table has not been created in production yet.
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError
+      && error.code === 'P2021'
+    ) {
+      await prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS "ImageAsset" (
+          "id" TEXT PRIMARY KEY,
+          "fileName" TEXT NOT NULL,
+          "mimeType" TEXT NOT NULL,
+          "data" BYTEA NOT NULL,
+          "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+      `);
+
+      image = await prisma.imageAsset.create({ data: imageData });
+    } else {
+      throw error;
     }
-  });
+  }
 
   return NextResponse.json({
     assetId: image.id,

@@ -3,6 +3,8 @@ dist
 .next
 .turbo
 .env
+.env.backend
+.env.frontend
 .DS_Store
 coverage
 frontend/.next

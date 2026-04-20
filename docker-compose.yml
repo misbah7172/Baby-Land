@@ -48,15 +48,7 @@ services:
     container_name: baby-land-frontend
     restart: unless-stopped
     env_file:
-      - .env
-    environment:
-      NODE_ENV: production
-      PORT: 3000
-      HOSTNAME: 0.0.0.0
-      NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL:-http://localhost:4000}
-      BACKEND_API_URL: http://backend:4000
-      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-localhost}
-      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      - .env.frontend
     depends_on:
       backend:
         condition: service_healthy
@@ -73,22 +65,14 @@ services:
     container_name: baby-land-backend
     restart: unless-stopped
     env_file:
-      - .env
+      - .env.backend
     environment:
+      # Override DATABASE_URL to use docker-compose MySQL service
+      DATABASE_URL: mysql://baby_land:baby_land_password@mysql:3306/baby_land
+      # Use Redis in docker-compose network
+      REDIS_URL: redis://redis:6379
+      # Set NODE_ENV to production for optimal performance
       NODE_ENV: production
-      PORT: 4000
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
-      BACKEND_URL: ${BACKEND_URL:-http://localhost:4000}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
-      DATABASE_URL: ${DATABASE_URL_DOCKER:-mysql://baby_land:baby_land_password@mysql:3306/baby_land}
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-localhost}
-      COOKIE_SECURE: ${COOKIE_SECURE:-false}
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-me-access-secret-change-me}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-refresh-secret-change-me}
-      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@babyland.local}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin12345!}
-      LOG_LEVEL: ${LOG_LEVEL:-debug}
     depends_on:
       mysql:
         condition: service_healthy

@@ -1544,8 +1544,34 @@ export async function dispatchApiRequest(request: NextRequest, segments: string[
     }
 
     if (error instanceof Prisma.PrismaClientInitializationError || error instanceof Prisma.PrismaClientValidationError) {
+      // Cart fallback
       if (segments[0] === 'cart' && request.method === 'GET') {
         return json({ cart: { items: [], subtotal: '0.00', itemCount: 0 } });
+      }
+
+      // Admin endpoints fallback
+      if (segments[0] === 'admin') {
+        if (segments[1] === 'analytics') {
+          return json({ totalOrders: 0, totalSales: '0.00', topProducts: [] });
+        }
+        if (segments[1] === 'products' && request.method === 'GET') {
+          return json({ products: [] });
+        }
+        if (segments[1] === 'categories' && request.method === 'GET') {
+          return json({ categories: [] });
+        }
+        if (segments[1] === 'orders' && request.method === 'GET') {
+          return json({ orders: [] });
+        }
+        if (segments[1] === 'users' && request.method === 'GET') {
+          return json({ users: [] });
+        }
+        if (segments[1] === 'reviews' && request.method === 'GET') {
+          return json({ reviews: [] });
+        }
+        if (segments[1] === 'settings' && segments[2] === 'homepage') {
+          return json({ settings: {} });
+        }
       }
 
       if (!process.env.DATABASE_URL) {

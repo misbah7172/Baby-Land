@@ -9,10 +9,15 @@ async function startServer() {
     console.log('Initializing Redis...');
     await connectRedis();
 
-    // Test database connection
+    // Test database connection, but do not hard-fail startup if DB is briefly unavailable.
     console.log('Testing database connection...');
-    await prisma.$queryRaw`SELECT 1`;
-    console.log('✓ Database connection successful');
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      console.log('✓ Database connection successful');
+    } catch (error) {
+      console.warn('⚠️  Database warm-up check failed. Starting server anyway and retrying on requests.');
+      console.warn(error instanceof Error ? error.message : error);
+    }
 
     // Create Express app
     const app = createApp();

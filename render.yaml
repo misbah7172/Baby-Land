@@ -2,6 +2,7 @@ services:
   - type: redis
     name: baby-land-redis
     plan: starter
+    ipAllowList: []
 
   - type: web
     name: baby-land-frontend

@@ -53,7 +53,18 @@ export async function getCategories() {
 }
 
 export async function getCart() {
-  return request<{ cart: CartPayload }>('/api/cart');
+  try {
+    return await request<{ cart: CartPayload }>('/api/cart');
+  } catch {
+    // Keep the storefront usable when the server cart is temporarily unavailable.
+    return {
+      cart: {
+        items: [],
+        subtotal: '0.00',
+        itemCount: 0
+      }
+    };
+  }
 }
 
 export async function addToCart(payload: { productId: string; quantity: number; size?: string }) {

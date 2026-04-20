@@ -49,5 +49,5 @@ EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:4000/health || exit 1
 
-# Run migrations and start server
-CMD sh -c "npm run prisma:generate && (npm run prisma:migrate || npm run prisma:dbpush) && npm run start"
+# Run migrations, ensure schema is synced, then start server
+CMD sh -c "npm run prisma:generate && (npm run prisma:migrate || true) && npm run prisma:dbpush && npm run start"

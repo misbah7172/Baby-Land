@@ -1,0 +1,87 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "buildCommand": "npm install"
+  },
+  "deploy": {
+    "startCommand": ""
+  },
+  "services": {
+    "database": {
+      "image": "mysql:8.4",
+      "environment": {
+        "MYSQL_ROOT_PASSWORD": {
+          "description": "MySQL root password",
+          "value": ""
+        },
+        "MYSQL_DATABASE": {
+          "description": "Database name",
+          "value": "baby_land"
+        },
+        "MYSQL_USER": {
+          "description": "MySQL user",
+          "value": "railway"
+        },
+        "MYSQL_PASSWORD": {
+          "description": "MySQL password",
+          "value": ""
+        }
+      },
+      "volumes": {
+        "mysql-data": "/var/lib/mysql"
+      },
+      "ports": [3306]
+    },
+    "cache": {
+      "image": "redis:7-alpine",
+      "environment": {},
+      "volumes": {
+        "redis-data": "/data"
+      },
+      "ports": [6379]
+    },
+    "backend": {
+      "builder": "DOCKERFILE",
+      "dockerfile": "backend/Dockerfile",
+      "environment": {
+        "NODE_ENV": "production",
+        "PORT": "4000",
+        "DATABASE_URL": "${{ database.DATABASE_URL }}",
+        "REDIS_URL": "${{ cache.REDIS_URL }}",
+        "FRONTEND_URL": "",
+        "BACKEND_URL": "${{ railway.public.domain }}",
+        "CORS_ORIGIN": "",
+        "JWT_ACCESS_SECRET": "",
+        "JWT_REFRESH_SECRET": "",
+        "ADMIN_EMAIL": "admin@babyland.local",
+        "ADMIN_PASSWORD": "",
+        "COOKIE_DOMAIN": "",
+        "COOKIE_SECURE": "true",
+        "LOG_LEVEL": "info"
+      },
+      "ports": [4000],
+      "depends": ["database", "cache"]
+    },
+    "frontend": {
+      "builder": "DOCKERFILE",
+      "dockerfile": "frontend/Dockerfile",
+      "environment": {
+        "NODE_ENV": "production",
+        "PORT": "3000",
+        "NEXT_PUBLIC_BACKEND_URL": "${{ backend.railway.public.domain }}/api",
+        "BACKEND_API_URL": "${{ backend.railway.internal.url }}",
+        "COOKIE_DOMAIN": "",
+        "COOKIE_SECURE": "true",
+        "NEXT_PUBLIC_FIREBASE_API_KEY": "",
+        "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN": "",
+        "NEXT_PUBLIC_FIREBASE_PROJECT_ID": "",
+        "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET": "",
+        "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "",
+        "NEXT_PUBLIC_FIREBASE_APP_ID": ""
+      },
+      "ports": [3000],
+      "depends": ["backend"]
+    }
+  }
+}

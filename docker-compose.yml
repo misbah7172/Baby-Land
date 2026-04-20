@@ -1,4 +1,5 @@
 services:
+  # MySQL Database
   mysql:
     image: mysql:8.4
     container_name: baby-land-mysql
@@ -18,14 +19,28 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    networks:
+      - baby-land
 
+  # Redis Cache
   redis:
     image: redis:7-alpine
     container_name: baby-land-redis
     restart: unless-stopped
     ports:
       - '6379:6379'
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - baby-land
 
+  # Next.js Frontend
   frontend:
     build:
       context: .
@@ -40,21 +55,21 @@ services:
       HOSTNAME: 0.0.0.0
       NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL:-http://localhost:4000}
       BACKEND_API_URL: http://backend:4000
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       COOKIE_DOMAIN: ${COOKIE_DOMAIN:-localhost}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
     depends_on:
-      - redis
-      - backend
+      backend:
+        condition: service_healthy
     ports:
       - '3000:3000'
+    networks:
+      - baby-land
 
+  # Express Backend API
   backend:
     build:
       context: .
       dockerfile: backend/Dockerfile
-      args:
-        PRISMA_PROVIDER: mysql
     container_name: baby-land-backend
     restart: unless-stopped
     env_file:
@@ -73,12 +88,21 @@ services:
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-refresh-secret-change-me}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@babyland.local}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin12345!}
-      PRISMA_PROVIDER: mysql
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
     depends_on:
-      - mysql
-      - redis
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     ports:
       - '4000:4000'
+    networks:
+      - baby-land
+
+networks:
+  baby-land:
+    driver: bridge
 
 volumes:
   mysql_data:
+  redis_data:

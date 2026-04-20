@@ -46,6 +46,7 @@ productRouter.get('/', async (request, response, next) => {
     const cacheKey = `products:list:${createHash('md5').update(JSON.stringify(query)).digest('hex')}`;
     const cached = await getCachedJson<{ products: unknown[]; total: number; page: number; limit: number }>(cacheKey);
     if (cached) {
+      response.setHeader('x-cache', 'HIT');
       response.json(cached);
       return;
     }
@@ -93,6 +94,7 @@ productRouter.get('/', async (request, response, next) => {
     };
 
     await setCachedJson(cacheKey, payload, 300);
+    response.setHeader('x-cache', 'MISS');
     response.json(payload);
   } catch (error) {
     next(error);
@@ -105,6 +107,7 @@ productRouter.get('/:slug', async (request, response, next) => {
     const cacheKey = `products:detail:${identifier}`;
     const cached = await getCachedJson<{ product: unknown }>(cacheKey);
     if (cached) {
+      response.setHeader('x-cache', 'HIT');
       response.json(cached);
       return;
     }
@@ -123,6 +126,7 @@ productRouter.get('/:slug', async (request, response, next) => {
 
     const payload = { product: serializeProduct(product) };
     await setCachedJson(cacheKey, payload, 300);
+    response.setHeader('x-cache', 'MISS');
     response.json(payload);
   } catch (error) {
     next(error);

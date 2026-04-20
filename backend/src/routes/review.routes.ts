@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { authRequired, AuthenticatedRequest } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
 import { validate } from '../middleware/validate';
+import { deleteByPattern, getCachedJson, setCachedJson } from '../utils/cache';
 
 export const reviewRouter = Router();
 
@@ -17,6 +18,14 @@ const reviewSchema = z.object({
 reviewRouter.get('/', async (request, response, next) => {
   try {
     const limit = Math.max(1, Math.min(12, Number(request.query.limit || 6)));
+    const cacheKey = `reviews:list:${limit}`;
+    const cached = await getCachedJson<{ reviews: unknown[] }>(cacheKey);
+    if (cached) {
+      response.setHeader('x-cache', 'HIT');
+      response.json(cached);
+      return;
+    }
+
     const reviews = await prisma.review.findMany({
       include: {
         user: { select: { name: true } },
@@ -26,7 +35,11 @@ reviewRouter.get('/', async (request, response, next) => {
       take: limit
     });
 
-    response.json({ reviews });
+    const payload = { reviews };
+    await setCachedJson(cacheKey, payload, 300);
+
+    response.setHeader('x-cache', 'MISS');
+    response.json(payload);
   } catch (error) {
     next(error);
   }
@@ -34,13 +47,25 @@ reviewRouter.get('/', async (request, response, next) => {
 
 reviewRouter.get('/product/:productId', async (request, response, next) => {
   try {
+    const cacheKey = `reviews:product:${request.params.productId}`;
+    const cached = await getCachedJson<{ reviews: unknown[] }>(cacheKey);
+    if (cached) {
+      response.setHeader('x-cache', 'HIT');
+      response.json(cached);
+      return;
+    }
+
     const reviews = await prisma.review.findMany({
       where: { productId: request.params.productId },
       include: { user: { select: { name: true } } },
       orderBy: { createdAt: 'desc' }
     });
 
-    response.json({ reviews });
+    const payload = { reviews };
+    await setCachedJson(cacheKey, payload, 300);
+
+    response.setHeader('x-cache', 'MISS');
+    response.json(payload);
   } catch (error) {
     next(error);
   }
@@ -73,6 +98,9 @@ reviewRouter.post('/product/:productId', authRequired, validate(reviewSchema), a
       update: { rating: body.rating, comment: body.comment ?? null },
       create: { userId: request.user!.id, productId, rating: body.rating, comment: body.comment ?? null }
     });
+
+    await deleteByPattern('reviews:*');
+    await deleteByPattern('products:*');
 
     response.status(201).json({ review });
   } catch (error) {

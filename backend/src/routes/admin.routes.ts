@@ -195,6 +195,7 @@ adminRouter.post('/categories', validate(categorySchema), async (request, respon
     }
 
     const category = await prisma.category.create({ data: body });
+    await deleteByPattern('categories:*');
     await deleteByPattern('products:*');
     response.status(201).json({ category });
   } catch (error) {
@@ -213,6 +214,7 @@ adminRouter.patch('/categories/:id', validate(categorySchema), async (request, r
     const categoryId = request.params.id as string;
 
     const category = await prisma.category.update({ where: { id: categoryId }, data: body });
+    await deleteByPattern('categories:*');
     await deleteByPattern('products:*');
     response.json({ category });
   } catch (error) {
@@ -223,6 +225,7 @@ adminRouter.patch('/categories/:id', validate(categorySchema), async (request, r
 adminRouter.delete('/categories/:id', async (request, response, next) => {
   try {
     await prisma.category.delete({ where: { id: request.params.id as string } });
+    await deleteByPattern('categories:*');
     await deleteByPattern('products:*');
     response.json({ ok: true });
   } catch (error) {
@@ -382,6 +385,7 @@ adminRouter.get('/reviews', async (_request, response, next) => {
 adminRouter.delete('/reviews/:id', async (request, response, next) => {
   try {
     await prisma.review.delete({ where: { id: request.params.id as string } });
+    await deleteByPattern('reviews:*');
     await deleteByPattern('products:*');
     response.json({ ok: true });
   } catch (error) {
@@ -410,6 +414,7 @@ adminRouter.put('/settings/homepage', validate(homepageSettingsSchema), async (r
       ...body,
       heroImageUrl: normalizePublicUrl(body.heroImageUrl)
     });
+    await deleteByPattern('settings:*');
     response.json({ settings });
   } catch (error) {
     next(error);

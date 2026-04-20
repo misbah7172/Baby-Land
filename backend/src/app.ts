@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 import path from 'path';
 
 import { env } from './lib/env';
+import { redis, redisHealthCheck } from './lib/redis';
 import { errorHandler, notFoundHandler } from './middleware/error';
 import { adminRouter } from './routes/admin.routes';
 import { authRouter } from './routes/auth.routes';
@@ -93,12 +94,20 @@ export function createApp() {
   app.use('/uploads', express.static(path.resolve(process.cwd(), 'backend/public/uploads')));
 
   // Health check endpoint (no rate limiting)
-  app.get('/health', (_req, res) => {
+  app.get('/health', async (_req, res) => {
+    const redisHealthy = await redisHealthCheck();
+
     res.json({
       ok: true,
       service: 'baby-land-api',
       timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV
+      environment: process.env.NODE_ENV,
+      redis: {
+        configured: Boolean(env.REDIS_URL),
+        connected: redis.status === 'ready',
+        healthy: redisHealthy,
+        status: redis.status
+      }
     });
   });
 

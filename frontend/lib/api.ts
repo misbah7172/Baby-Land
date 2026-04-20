@@ -312,7 +312,9 @@ export async function uploadAdminImage(file: Blob, filename = 'upload.jpg') {
   const formData = new FormData();
   formData.append('file', file, filename);
 
-  const response = await fetch(new URL('/api/upload/image', backendApiBase).toString(), {
+  const uploadUrl = backendApiBase ? new URL('/api/upload/image', backendApiBase).toString() : '/api/upload/image';
+
+  const response = await fetch(uploadUrl, {
     method: 'POST',
     credentials: 'include',
     headers: getAdminHeaders(),

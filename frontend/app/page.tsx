@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
+import Image from 'next/image';
 
 import { getCategories, getHomepageSettings, getProducts, getPublicReviews } from '@/lib/api';
 import { getCopy, normalizeLanguage } from '@/lib/i18n';
@@ -23,20 +24,37 @@ export default async function HomePage() {
   let settings: Record<string, unknown> = {};
   let reviews: Awaited<ReturnType<typeof getPublicReviews>>['reviews'] = [];
 
-  try {
-    const [productsResponse, categoriesResponse, homepageSettingsResponse, reviewsResponse] = await Promise.all([
-      getProducts({ featured: 'true', limit: '6' }),
-      getCategories(),
-      getHomepageSettings(),
-      getPublicReviews(3)
-    ]);
+  const [productsResult, categoriesResult, settingsResult, reviewsResult] = await Promise.allSettled([
+    getProducts({ featured: 'true', limit: '6' }),
+    getCategories(),
+    getHomepageSettings(),
+    getPublicReviews(3)
+  ]);
 
-    products = productsResponse.products;
-    categories = categoriesResponse.categories;
-    settings = homepageSettingsResponse.settings;
-    reviews = reviewsResponse.reviews;
-  } catch {
-    // Render the storefront shell even if the API is temporarily unavailable.
+  if (productsResult.status === 'fulfilled') {
+    products = productsResult.value.products;
+  }
+
+  if (categoriesResult.status === 'fulfilled') {
+    categories = categoriesResult.value.categories;
+  }
+
+  if (settingsResult.status === 'fulfilled') {
+    settings = settingsResult.value.settings;
+  }
+
+  if (reviewsResult.status === 'fulfilled') {
+    reviews = reviewsResult.value.reviews;
+  }
+
+  // Fallback: if no featured items are configured yet, show newest products.
+  if (products.length === 0) {
+    try {
+      const fallbackProducts = await getProducts({ limit: '6' });
+      products = fallbackProducts.products;
+    } catch {
+      // Keep graceful empty state.
+    }
   }
 
   const heroBadge = typeof settings.heroBadge === 'string' ? settings.heroBadge : text.home.badge;
@@ -83,12 +101,16 @@ export default async function HomePage() {
 
           <div className="bg-gradient-to-br from-[#D6EAF8] to-[#D5F5E3] rounded-3xl h-96 md:h-[500px] overflow-hidden">
             {heroImageUrl ? (
-              <img
-                src={heroImageUrl}
-                alt="Homepage hero"
-                className="h-full w-full object-cover"
-                loading="eager"
-              />
+              <div className="relative h-full w-full">
+                <Image
+                  src={heroImageUrl}
+                  alt="Homepage hero"
+                  fill
+                  priority
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-cover"
+                />
+              </div>
             ) : (
               <div className="h-full flex items-center justify-center">
                 <div className="text-center text-[#777777]">
@@ -153,22 +175,28 @@ export default async function HomePage() {
       <section className="bg-[#E8DAEF]">
         <div className="mx-auto max-w-7xl px-4 py-16 md:px-8">
           <h2 className="text-3xl md:text-4xl font-bold text-[#333333] mb-12 text-center">{text.home.testimonialsTitle}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {reviews.map((review) => (
-              <div
-                key={review.id}
-                className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition"
-              >
-                <div className="flex items-center gap-1 mb-3">
-                  {[...Array(review.rating)].map((_, i) => <span key={i} className="text-[#FFB6A3]">★</span>)}
+          {reviews.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {reviews.map((review) => (
+                <div
+                  key={review.id}
+                  className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition"
+                >
+                  <div className="flex items-center gap-1 mb-3">
+                    {[...Array(review.rating)].map((_, i) => <span key={i} className="text-[#FFB6A3]">★</span>)}
+                  </div>
+                  <p className="text-[#777777] italic mb-4">"{review.comment || review.product.name}"</p>
+                  <div>
+                    <p className="font-semibold text-[#333333]">{review.user.name}</p>
+                  </div>
                 </div>
-                <p className="text-[#777777] italic mb-4">"{review.comment || review.product.name}"</p>
-                <div>
-                  <p className="font-semibold text-[#333333]">{review.user.name}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mx-auto max-w-3xl rounded-2xl bg-white/80 p-8 text-center text-[#777777]">
+              No customer reviews yet. New reviews will appear here automatically once users submit them.
+            </div>
+          )}
         </div>
       </section>
 

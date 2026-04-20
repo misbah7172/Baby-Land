@@ -9,6 +9,14 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'images.unsplash.com'
+      },
+      {
+        protocol: 'https',
+        hostname: '**.up.railway.app'
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost'
       }
     ],
     formats: ['image/avif', 'image/webp'],

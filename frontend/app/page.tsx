@@ -44,6 +44,7 @@ export default async function HomePage() {
   const heroSubtitle = typeof settings.heroSubtitle === 'string' ? settings.heroSubtitle : text.home.subtitle;
   const primaryCtaLabel = typeof settings.primaryCtaLabel === 'string' ? settings.primaryCtaLabel : text.home.primaryCta;
   const secondaryCtaLabel = typeof settings.secondaryCtaLabel === 'string' ? settings.secondaryCtaLabel : text.home.secondaryCta;
+  const heroImageUrl = typeof settings.heroImageUrl === 'string' ? settings.heroImageUrl : '';
 
   return (
     <div className="bg-[#FFF8F0]">
@@ -80,12 +81,22 @@ export default async function HomePage() {
             </div>
           </div>
 
-          {/* Hero Image Placeholder */}
-          <div className="bg-gradient-to-br from-[#D6EAF8] to-[#D5F5E3] rounded-3xl h-96 md:h-[500px] flex items-center justify-center">
-            <div className="text-center text-[#777777]">
-              <div className="text-6xl mb-3">👶</div>
-              <p>Baby Product Image</p>
-            </div>
+          <div className="bg-gradient-to-br from-[#D6EAF8] to-[#D5F5E3] rounded-3xl h-96 md:h-[500px] overflow-hidden">
+            {heroImageUrl ? (
+              <img
+                src={heroImageUrl}
+                alt="Homepage hero"
+                className="h-full w-full object-cover"
+                loading="eager"
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center">
+                <div className="text-center text-[#777777]">
+                  <div className="text-6xl mb-3">👶</div>
+                  <p>Baby Product Image</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>

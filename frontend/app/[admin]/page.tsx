@@ -102,6 +102,7 @@ type HomepageSettings = {
   heroSubtitle: string;
   primaryCtaLabel: string;
   secondaryCtaLabel: string;
+  heroImageUrl: string;
 };
 
 const sizeOptions: Array<'NEWBORN' | 'M0_3' | 'M3_6' | 'M6_12' | 'M12_18' | 'M18_24' | 'ONE_SIZE'> = [
@@ -156,7 +157,8 @@ function createDefaultHomepageSettings(): HomepageSettings {
     heroTitle: 'Gentle Care, Trusted Quality',
     heroSubtitle: 'Premium baby essentials designed with parents in mind. Soft, safe, and sourced from the most trusted brands for your peace of mind.',
     primaryCtaLabel: 'Explore Products',
-    secondaryCtaLabel: 'View Categories'
+    secondaryCtaLabel: 'View Categories',
+    heroImageUrl: ''
   };
 }
 
@@ -179,6 +181,8 @@ export default function AdminDashboard() {
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageUploadMessage, setImageUploadMessage] = useState('');
+  const [uploadingHeroImage, setUploadingHeroImage] = useState(false);
+  const [heroImageMessage, setHeroImageMessage] = useState('');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedOrderDetail, setSelectedOrderDetail] = useState<AdminOrderDetail | null>(null);
   const [loadingOrderDetail, setLoadingOrderDetail] = useState(false);
@@ -220,7 +224,8 @@ export default function AdminDashboard() {
         heroTitle: typeof homepageSettingsResult.settings.heroTitle === 'string' ? homepageSettingsResult.settings.heroTitle : createDefaultHomepageSettings().heroTitle,
         heroSubtitle: typeof homepageSettingsResult.settings.heroSubtitle === 'string' ? homepageSettingsResult.settings.heroSubtitle : createDefaultHomepageSettings().heroSubtitle,
         primaryCtaLabel: typeof homepageSettingsResult.settings.primaryCtaLabel === 'string' ? homepageSettingsResult.settings.primaryCtaLabel : createDefaultHomepageSettings().primaryCtaLabel,
-        secondaryCtaLabel: typeof homepageSettingsResult.settings.secondaryCtaLabel === 'string' ? homepageSettingsResult.settings.secondaryCtaLabel : createDefaultHomepageSettings().secondaryCtaLabel
+        secondaryCtaLabel: typeof homepageSettingsResult.settings.secondaryCtaLabel === 'string' ? homepageSettingsResult.settings.secondaryCtaLabel : createDefaultHomepageSettings().secondaryCtaLabel,
+        heroImageUrl: typeof homepageSettingsResult.settings.heroImageUrl === 'string' ? homepageSettingsResult.settings.heroImageUrl : createDefaultHomepageSettings().heroImageUrl
       });
       if (!editingProductId && !newProduct.categoryId && (categoriesResult.categories || []).length > 0) {
         setNewProduct((prev) => ({ ...prev, categoryId: categoriesResult.categories[0]!.id }));
@@ -435,11 +440,34 @@ export default function AdminDashboard() {
         heroTitle: typeof result.settings.heroTitle === 'string' ? result.settings.heroTitle : homepageSettings.heroTitle,
         heroSubtitle: typeof result.settings.heroSubtitle === 'string' ? result.settings.heroSubtitle : homepageSettings.heroSubtitle,
         primaryCtaLabel: typeof result.settings.primaryCtaLabel === 'string' ? result.settings.primaryCtaLabel : homepageSettings.primaryCtaLabel,
-        secondaryCtaLabel: typeof result.settings.secondaryCtaLabel === 'string' ? result.settings.secondaryCtaLabel : homepageSettings.secondaryCtaLabel
+        secondaryCtaLabel: typeof result.settings.secondaryCtaLabel === 'string' ? result.settings.secondaryCtaLabel : homepageSettings.secondaryCtaLabel,
+        heroImageUrl: typeof result.settings.heroImageUrl === 'string' ? result.settings.heroImageUrl : homepageSettings.heroImageUrl
       });
       setMessage('Homepage hero updated successfully.');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Failed to update homepage hero');
+    }
+  };
+
+  const handleUploadHeroImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const fileInput = event.target as unknown as { files?: Array<{ name: string }>; value: string };
+    const file = fileInput.files?.[0] as unknown as Blob & { name?: string } | undefined;
+    if (!file) {
+      return;
+    }
+
+    setUploadingHeroImage(true);
+    setHeroImageMessage('');
+
+    try {
+      const result = await uploadAdminImage(file, file.name || 'hero-image.jpg');
+      setHomepageSettings((prev) => ({ ...prev, heroImageUrl: result.url }));
+      setHeroImageMessage('Hero image uploaded. Click Save Homepage Hero to publish it.');
+    } catch (error) {
+      setHeroImageMessage(error instanceof Error ? error.message : 'Failed to upload hero image');
+    } finally {
+      setUploadingHeroImage(false);
+      fileInput.value = '';
     }
   };
 
@@ -546,7 +574,7 @@ export default function AdminDashboard() {
             <form onSubmit={handleSaveHomepageSettings} className="bg-white p-6 rounded-2xl shadow-sm md:col-span-2 lg:col-span-3 space-y-4">
               <div>
                 <h3 className="text-lg font-semibold text-[#333333]">Homepage Hero Customization</h3>
-                <p className="text-sm text-[#777777] mt-1">Update the hero badge, heading, supporting text, and CTAs shown on the homepage.</p>
+                <p className="text-sm text-[#777777] mt-1">Update the hero badge, heading, supporting text, CTAs, and hero image shown on the homepage.</p>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <input
@@ -581,6 +609,23 @@ export default function AdminDashboard() {
                 placeholder="Secondary CTA label"
                 className="w-full rounded-xl border border-[#FADADD] px-4 py-2"
               />
+              <div className="space-y-2 rounded-2xl border border-[#FADADD] bg-[#FFF8F0] p-4">
+                <p className="text-sm font-semibold text-[#333333]">Hero Image</p>
+                <input
+                  value={homepageSettings.heroImageUrl}
+                  onChange={(event) => setHomepageSettings((prev) => ({ ...prev, heroImageUrl: readInputValue(event) }))}
+                  placeholder="Hero image URL"
+                  className="w-full rounded-xl border border-[#FADADD] px-4 py-2"
+                />
+                <input type="file" accept="image/*" onChange={handleUploadHeroImage} className="w-full rounded-xl border border-dashed border-[#FADADD] px-4 py-2 bg-white" />
+                <p className="text-xs text-[#777777]">{uploadingHeroImage ? 'Uploading hero image...' : 'Upload or paste an image URL. Save to publish.'}</p>
+                {heroImageMessage ? <p className="text-xs text-[#2d7a5e]">{heroImageMessage}</p> : null}
+                {homepageSettings.heroImageUrl ? (
+                  <div className="rounded-xl bg-white p-2">
+                    <img src={homepageSettings.heroImageUrl} alt="Hero preview" className="h-40 w-full rounded-lg object-cover" />
+                  </div>
+                ) : null}
+              </div>
               <button type="submit" className="rounded-xl bg-[#FFB6A3] px-5 py-2 font-semibold text-white">
                 Save Homepage Hero
               </button>

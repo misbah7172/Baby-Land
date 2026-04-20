@@ -172,6 +172,7 @@ export async function updateAdminHomepageSettings(payload: {
   heroSubtitle: string;
   primaryCtaLabel: string;
   secondaryCtaLabel: string;
+  heroImageUrl: string;
 }) {
   return request<{ settings: Record<string, unknown> }>('/api/admin/settings/homepage', {
     method: 'PUT',

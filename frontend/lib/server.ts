@@ -1386,6 +1386,7 @@ async function handleSettings(request: NextRequest, segments: string[]) {
         heroSubtitle: string;
         primaryCtaLabel: string;
         secondaryCtaLabel: string;
+        heroImageUrl: string;
       }>(request);
 
       const entries = Object.entries(body).filter(([, value]) => typeof value === 'string' && value.trim().length > 0);

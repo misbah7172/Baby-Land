@@ -50,13 +50,10 @@ COPY --from=builder /app/backend/dist ./backend/dist
 COPY --from=builder /app/backend/package.json ./backend/package.json
 COPY --from=builder /app/database/prisma ./database/prisma
 
-# Copy entrypoint
-COPY docker/entrypoint.backend.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
 EXPOSE 4000
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:4000/health || exit 1
 
-ENTRYPOINT ["/entrypoint.sh"]
+# Run migrations and start server
+CMD npm run prisma:generate -w backend && npm run prisma:migrate -w backend && npm run start -w backend

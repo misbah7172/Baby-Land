@@ -33,9 +33,6 @@ COPY frontend/prisma frontend/prisma
 COPY frontend/next.config.ts frontend/tsconfig.json frontend/middleware.ts frontend/
 COPY frontend/tailwind.config.ts frontend/postcss.config.mjs frontend/
 
-# Copy Prisma schema (needed for frontend)
-COPY database/prisma database/prisma
-
 # Build frontend
 RUN npm run build -w frontend
 

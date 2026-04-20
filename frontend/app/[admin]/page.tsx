@@ -258,7 +258,8 @@ export default function AdminDashboard() {
 
       setEditingCategoryId(null);
       setNewCategory({ name: '', slug: '' });
-      await loadAdminData();
+      const categoriesResult = await getAdminCategories();
+      setCategories(categoriesResult.categories || []);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Failed to save category');
     }
@@ -280,7 +281,8 @@ export default function AdminDashboard() {
     try {
       await deleteAdminCategory(categoryId);
       setMessage('Category deleted successfully.');
-      await loadAdminData();
+      const categoriesResult = await getAdminCategories();
+      setCategories(categoriesResult.categories || []);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Failed to delete category');
     }
@@ -322,7 +324,8 @@ export default function AdminDashboard() {
 
       setEditingProductId(null);
       setNewProduct(createEmptyProductForm(categories[0]?.id));
-      await loadAdminData();
+      const productsResult = await getAdminProducts();
+      setProducts(productsResult.products || []);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Failed to save product');
     }
@@ -382,7 +385,8 @@ export default function AdminDashboard() {
     try {
       await deleteAdminProduct(productId);
       setMessage('Product deleted successfully.');
-      await loadAdminData();
+      const productsResult = await getAdminProducts();
+      setProducts(productsResult.products || []);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Failed to delete product');
     }
@@ -392,7 +396,10 @@ export default function AdminDashboard() {
     try {
       await updateAdminOrderStatus(orderId, { orderStatus });
       setMessage('Order status updated.');
-      await loadAdminData();
+      setOrders((prev) => prev.map((order) => (order.id === orderId ? { ...order, orderStatus } : order)));
+      if (selectedOrderDetail?.id === orderId) {
+        setSelectedOrderDetail((prev) => (prev ? { ...prev, orderStatus } : prev));
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Failed to update order status');
     }
@@ -402,7 +409,7 @@ export default function AdminDashboard() {
     try {
       await updateAdminUserRole(userId, role);
       setMessage('User role updated.');
-      await loadAdminData();
+      setUsers((prev) => prev.map((user) => (user.id === userId ? { ...user, role } : user)));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Failed to update user role');
     }
@@ -412,7 +419,7 @@ export default function AdminDashboard() {
     try {
       await deleteAdminReview(reviewId);
       setMessage('Review removed successfully.');
-      await loadAdminData();
+      setReviews((prev) => prev.filter((review) => review.id !== reviewId));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Failed to remove review');
     }

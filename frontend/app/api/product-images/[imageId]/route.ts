@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/server';
 
 export const dynamic = 'force-dynamic';
+export const preferredRegion = 'bom1';
 
 export async function GET(request: NextRequest, context: { params: Promise<{ imageId: string }> }) {
   const params = await context.params;

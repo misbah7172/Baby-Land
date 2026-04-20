@@ -7,6 +7,14 @@ import { getCategories, getHomepageSettings, getProducts, getPublicReviews } fro
 import { getCopy, normalizeLanguage } from '@/lib/i18n';
 import { ProductCard } from '@/components/product-card';
 
+function normalizeImageUrl(url: string) {
+  if (url.startsWith('http://') && url.includes('.up.railway.app')) {
+    return url.replace('http://', 'https://');
+  }
+
+  return url;
+}
+
 export const revalidate = 300;
 export const dynamic = 'force-dynamic';
 
@@ -62,7 +70,7 @@ export default async function HomePage() {
   const heroSubtitle = typeof settings.heroSubtitle === 'string' ? settings.heroSubtitle : text.home.subtitle;
   const primaryCtaLabel = typeof settings.primaryCtaLabel === 'string' ? settings.primaryCtaLabel : text.home.primaryCta;
   const secondaryCtaLabel = typeof settings.secondaryCtaLabel === 'string' ? settings.secondaryCtaLabel : text.home.secondaryCta;
-  const heroImageUrl = typeof settings.heroImageUrl === 'string' ? settings.heroImageUrl : '';
+  const heroImageUrl = typeof settings.heroImageUrl === 'string' ? normalizeImageUrl(settings.heroImageUrl) : '';
 
   return (
     <div className="bg-[#FFF8F0]">
@@ -115,7 +123,7 @@ export default async function HomePage() {
               <div className="h-full flex items-center justify-center">
                 <div className="text-center text-[#777777]">
                   <div className="text-6xl mb-3">👶</div>
-                  <p>Baby Product Image</p>
+                  <p>{text.home.heroPlaceholder}</p>
                 </div>
               </div>
             )}
@@ -136,7 +144,7 @@ export default async function HomePage() {
               >
                 <div className="text-4xl mb-3 group-hover:scale-110 transition">📦</div>
                 <h3 className="font-semibold text-[#333333]">{category.name}</h3>
-                <p className="text-sm text-[#777777] mt-2">{category._count?.products ?? 0} products</p>
+                <p className="text-sm text-[#777777] mt-2">{category._count?.products ?? 0} {text.home.productsCountSuffix}</p>
               </Link>
             ))}
           </div>
@@ -165,7 +173,7 @@ export default async function HomePage() {
               href="/products"
               className="inline-block bg-[#D6EAF8] text-[#333333] px-8 py-3 rounded-2xl font-semibold hover:bg-opacity-80 transition"
             >
-              View All Products
+              {text.home.viewAllProducts}
             </Link>
           </div>
         )}
@@ -194,7 +202,7 @@ export default async function HomePage() {
             </div>
           ) : (
             <div className="mx-auto max-w-3xl rounded-2xl bg-white/80 p-8 text-center text-[#777777]">
-              No customer reviews yet. New reviews will appear here automatically once users submit them.
+              {text.home.noReviewsFallback}
             </div>
           )}
         </div>
@@ -204,12 +212,7 @@ export default async function HomePage() {
       <section className="mx-auto max-w-7xl px-4 py-16 md:px-8">
         <h2 className="text-3xl md:text-4xl font-bold text-[#333333] mb-12 text-center">{text.home.whyTitle}</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {[
-            { icon: "✓", title: "Safe & Certified", desc: "All products meet international safety standards" },
-            { icon: "♻", title: "Eco-Friendly", desc: "Sustainable materials and ethical sourcing" },
-            { icon: "⚡", title: "Fast Delivery", desc: "Quick shipping to your doorstep" },
-            { icon: "💬", title: "24/7 Support", desc: "Friendly customer service always available" }
-          ].map((item, idx) => (
+          {text.home.whyItems.map((item, idx) => (
             <div key={idx} className="text-center p-6 rounded-2xl bg-[#FFF8F0]">
               <p className="text-4xl mb-3">{item.icon}</p>
               <h3 className="font-semibold text-[#333333] mb-2">{item.title}</h3>

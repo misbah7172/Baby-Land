@@ -11,6 +11,14 @@ import { getSettingsGroup, upsertSettingsGroup } from '../services/site-settings
 
 export const adminRouter = Router();
 
+function normalizePublicUrl(value: string) {
+  if (value.startsWith('http://') && value.includes('.up.railway.app')) {
+    return value.replace('http://', 'https://');
+  }
+
+  return value;
+}
+
 function hasEnvAdminCredentials(request: AuthenticatedRequest) {
   const adminEmail = request.header('x-admin-email');
   const adminPassword = request.header('x-admin-password');
@@ -81,7 +89,8 @@ const homepageSettingsSchema = z.object({
     heroTitle: z.string().min(2),
     heroSubtitle: z.string().min(2),
     primaryCtaLabel: z.string().min(2),
-    secondaryCtaLabel: z.string().min(2)
+    secondaryCtaLabel: z.string().min(2),
+    heroImageUrl: z.string().url().or(z.literal('')).default('')
   })
 });
 
@@ -250,7 +259,7 @@ adminRouter.post('/products', validate(productSchema), async (request, response,
         sku: body.sku,
         material: body.material,
         featured: body.featured,
-        images: { create: body.imageUrls.map((url, index) => ({ url, sortOrder: index })) },
+        images: { create: body.imageUrls.map((url, index) => ({ url: normalizePublicUrl(url), sortOrder: index })) },
         sizes: { create: body.sizes.map(size => ({ size })) }
       }
     });
@@ -291,7 +300,7 @@ adminRouter.patch('/products/:id', validate(productSchema), async (request, resp
     await prisma.productImage.deleteMany({ where: { productId } });
     await prisma.productSizeOption.deleteMany({ where: { productId } });
     await prisma.productImage.createMany({
-      data: body.imageUrls.map((url, index) => ({ productId, url, sortOrder: index }))
+      data: body.imageUrls.map((url, index) => ({ productId, url: normalizePublicUrl(url), sortOrder: index }))
     });
     await prisma.productSizeOption.createMany({
       data: body.sizes.map(size => ({ productId, size }))
@@ -397,7 +406,10 @@ adminRouter.put('/settings/homepage', validate(homepageSettingsSchema), async (r
       return;
     }
 
-    const settings = await upsertSettingsGroup('homepage', body);
+    const settings = await upsertSettingsGroup('homepage', {
+      ...body,
+      heroImageUrl: normalizePublicUrl(body.heroImageUrl)
+    });
     response.json({ settings });
   } catch (error) {
     next(error);

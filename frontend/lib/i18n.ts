@@ -15,7 +15,8 @@ export const translations = {
       logout: 'Logout'
     },
     header: {
-      language: 'ENG'
+      language: 'ENG',
+      more: 'More'
     },
     home: {
       badge: 'Comfort for Your Little One',
@@ -32,7 +33,17 @@ export const translations = {
       ctaTitle: 'Ready to Comfort Your Baby?',
       ctaDescription: 'Start exploring our collection of premium baby products selected just for your little one.',
       ctaButton: 'Shop Now',
-      reviewTitle: 'Real reviews from parents'
+      reviewTitle: 'Real reviews from parents',
+      heroPlaceholder: 'Baby Product Image',
+      productsCountSuffix: 'products',
+      viewAllProducts: 'View All Products',
+      noReviewsFallback: 'No customer reviews yet. New reviews will appear here automatically once users submit them.',
+      whyItems: [
+        { icon: '✓', title: 'Safe & Certified', desc: 'All products meet international safety standards' },
+        { icon: '♻', title: 'Eco-Friendly', desc: 'Sustainable materials and ethical sourcing' },
+        { icon: '⚡', title: 'Fast Delivery', desc: 'Quick shipping to your doorstep' },
+        { icon: '💬', title: '24/7 Support', desc: 'Friendly customer service always available' }
+      ]
     },
     cart: {
       title: 'Your shopping bag',
@@ -131,7 +142,8 @@ export const translations = {
       logout: 'লগআউট'
     },
     header: {
-      language: 'বাংলা'
+      language: 'বাংলা',
+      more: 'আরও'
     },
     home: {
       badge: 'আপনার ছোট্ট সোনার আরাম',
@@ -148,7 +160,17 @@ export const translations = {
       ctaTitle: 'আপনার শিশুর জন্য সেরা আরাম দিতে প্রস্তুত?',
       ctaDescription: 'আপনার ছোট্ট সোনার জন্য বাছাই করা প্রিমিয়াম বেবি পণ্যের সংগ্রহ ঘুরে দেখুন।',
       ctaButton: 'এখনই কিনুন',
-      reviewTitle: 'পিতামাতাদের আসল রিভিউ'
+      reviewTitle: 'পিতামাতাদের আসল রিভিউ',
+      heroPlaceholder: 'বেবি প্রোডাক্ট ইমেজ',
+      productsCountSuffix: 'টি পণ্য',
+      viewAllProducts: 'সব পণ্য দেখুন',
+      noReviewsFallback: 'এখনও কোনো কাস্টমার রিভিউ নেই। নতুন রিভিউ জমা হলে এখানে দেখা যাবে।',
+      whyItems: [
+        { icon: '✓', title: 'নিরাপদ ও সার্টিফায়েড', desc: 'সব পণ্য আন্তর্জাতিক নিরাপত্তা মানদণ্ড মেনে তৈরি' },
+        { icon: '♻', title: 'পরিবেশবান্ধব', desc: 'টেকসই উপকরণ ও নৈতিক সোর্সিং' },
+        { icon: '⚡', title: 'দ্রুত ডেলিভারি', desc: 'দ্রুত আপনার দরজায় পৌঁছে দেই' },
+        { icon: '💬', title: '২৪/৭ সহায়তা', desc: 'সবসময় বন্ধুসুলভ কাস্টমার সাপোর্ট' }
+      ]
     },
     cart: {
       title: 'আপনার কার্ট',

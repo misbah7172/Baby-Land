@@ -11,6 +11,18 @@ import { Role } from '@prisma/client';
 
 export const uploadRouter = Router();
 
+function normalizePublicUrl(value: string) {
+  if (!value) {
+    return value;
+  }
+
+  if (value.startsWith('http://') && value.includes('.up.railway.app')) {
+    return value.replace('http://', 'https://');
+  }
+
+  return value;
+}
+
 function hasEnvAdminCredentials(request: AuthenticatedRequest) {
   const adminEmail = request.header('x-admin-email');
   const adminPassword = request.header('x-admin-password');
@@ -72,7 +84,7 @@ uploadRouter.post('/image', adminAccessRequired, async (request: AuthenticatedRe
 
       await rename(selectedFile.filepath, destinationPath);
 
-      const publicUrl = `${env.BACKEND_URL}/uploads/${fileName}`;
+      const publicUrl = normalizePublicUrl(`${env.BACKEND_URL}/uploads/${fileName}`);
       response.status(201).json({ url: publicUrl });
     });
   } catch (error) {

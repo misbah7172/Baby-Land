@@ -1,26 +1,32 @@
 import { randomUUID } from 'crypto';
-import { mkdir, rename } from 'fs/promises';
-import path from 'path';
+import { readFile } from 'fs/promises';
 
 import { Router } from 'express';
 import { IncomingForm, type Fields, type Files, type File } from 'formidable';
 
 import { env } from '../lib/env';
+import { prisma } from '../lib/prisma';
 import { authRequired, AuthenticatedRequest } from '../middleware/auth';
 import { Role } from '@prisma/client';
 
 export const uploadRouter = Router();
 
-function normalizePublicUrl(value: string) {
-  if (!value) {
-    return value;
+let imageAssetTableReady: Promise<void> | null = null;
+
+async function ensureImageAssetTable() {
+  if (!imageAssetTableReady) {
+    imageAssetTableReady = prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS ImageAsset (
+        id VARCHAR(191) PRIMARY KEY,
+        fileName VARCHAR(255) NOT NULL,
+        mimeType VARCHAR(255) NOT NULL,
+        data LONGBLOB NOT NULL,
+        createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
+      )
+    `).then(() => undefined);
   }
 
-  if (value.startsWith('http://') && value.includes('.up.railway.app')) {
-    return value.replace('http://', 'https://');
-  }
-
-  return value;
+  return imageAssetTableReady;
 }
 
 function hasEnvAdminCredentials(request: AuthenticatedRequest) {
@@ -48,20 +54,11 @@ function adminAccessRequired(request: AuthenticatedRequest, response: import('ex
   });
 }
 
-const uploadDirectory = path.resolve(process.cwd(), 'backend/public/uploads');
-
-async function ensureUploadDirectory() {
-  await mkdir(uploadDirectory, { recursive: true });
-}
-
 uploadRouter.post('/image', adminAccessRequired, async (request: AuthenticatedRequest, response, next) => {
   try {
-    await ensureUploadDirectory();
-
     const form = new IncomingForm({
       multiples: false,
       keepExtensions: true,
-      uploadDir: uploadDirectory,
       maxFileSize: 10 * 1024 * 1024
     });
 
@@ -79,13 +76,21 @@ uploadRouter.post('/image', adminAccessRequired, async (request: AuthenticatedRe
         return;
       }
 
-      const fileName = `${randomUUID()}${selectedFile.originalFilename && path.extname(selectedFile.originalFilename) ? path.extname(selectedFile.originalFilename) : '.jpg'}`;
-      const destinationPath = path.join(uploadDirectory, fileName);
+      const fileName = `${randomUUID()}-${selectedFile.originalFilename || 'upload.jpg'}`;
+      const mimeType = selectedFile.mimetype || 'image/jpeg';
+      const data = await readFile(selectedFile.filepath);
+      const assetId = randomUUID();
 
-      await rename(selectedFile.filepath, destinationPath);
+      await ensureImageAssetTable();
+      await prisma.$executeRawUnsafe(
+        'INSERT INTO ImageAsset (id, fileName, mimeType, data, createdAt) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP(3))',
+        assetId,
+        fileName,
+        mimeType,
+        data
+      );
 
-      const publicUrl = normalizePublicUrl(`${env.BACKEND_URL}/uploads/${fileName}`);
-      response.status(201).json({ url: publicUrl });
+      response.status(201).json({ assetId, url: `/api/product-images/${assetId}` });
     });
   } catch (error) {
     next(error);

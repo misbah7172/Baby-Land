@@ -14,6 +14,7 @@ import { cartRouter } from './routes/cart.routes';
 import { categoryRouter } from './routes/category.routes';
 import { orderRouter } from './routes/order.routes';
 import { settingsRouter } from './routes/settings.routes';
+import { productImagesRouter } from './routes/product-images.routes';
 import { uploadRouter } from './routes/upload.routes';
 import { productRouter } from './routes/product.routes';
 import { reviewRouter } from './routes/review.routes';
@@ -127,6 +128,7 @@ export function createApp() {
   app.use('/api/orders', orderRouter);
   app.use('/api/reviews', reviewRouter);
   app.use('/api/settings', settingsRouter);
+  app.use('/api/product-images', productImagesRouter);
   app.use('/api/admin', adminRouter);
   app.use('/api/upload', uploadRouter);
 

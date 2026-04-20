@@ -397,10 +397,10 @@ export async function dispatchApiRequest(request: NextRequest, segments: string[
       }
 
       if (!process.env.DATABASE_URL) {
-        return json({ message: 'DATABASE_URL is missing on the server. Set it in Vercel Environment Variables and redeploy.' }, { status: 503 });
+        return json({ message: 'DATABASE_URL is missing on the server. Set it in Railway environment variables and redeploy.' }, { status: 503 });
       }
 
-      return json({ message: 'Database connection failed. Verify DATABASE_URL points to your Supabase Postgres and redeploy.' }, { status: 503 });
+      return json({ message: 'Database connection failed. Verify DATABASE_URL points to your Railway database and redeploy.' }, { status: 503 });
     }
 
     if (error instanceof Prisma.PrismaClientKnownRequestError) {

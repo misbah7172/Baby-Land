@@ -6,8 +6,8 @@ const isServerRuntime = !('window' in globalThis);
 const serverApiBase =
   process.env.INTERNAL_API_URL ||
   process.env.APP_BASE_URL ||
-  process.env.RENDER_EXTERNAL_URL ||
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://127.0.0.1:${process.env.PORT || 3000}`);
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  `http://127.0.0.1:${process.env.PORT || 3000}`;
 const appApiBase = isServerRuntime ? serverApiBase : '';
 const backendApiBase = getBackendApiBase();
 

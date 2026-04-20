@@ -1,23 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { prisma } from '@/lib/server';
+import { getBackendApiBase } from '@/lib/backend';
 
 export const dynamic = 'force-dynamic';
 export const preferredRegion = 'bom1';
 
 export async function GET(request: NextRequest, context: { params: Promise<{ imageId: string }> }) {
   const params = await context.params;
-  const asset = await prisma.imageAsset.findUnique({ where: { id: params.imageId } });
+  const backendBase = getBackendApiBase();
+  const targetUrl = new URL(`/api/product-images/${params.imageId}`, backendBase);
+  const response = await fetch(targetUrl, { method: request.method });
+  const body = await response.arrayBuffer();
 
-  if (!asset) {
-    return NextResponse.json({ message: 'Image not found' }, { status: 404 });
+  const proxied = new NextResponse(body, { status: response.status });
+  const contentType = response.headers.get('content-type');
+  if (contentType) {
+    proxied.headers.set('content-type', contentType);
+  }
+  const cacheControl = response.headers.get('cache-control');
+  if (cacheControl) {
+    proxied.headers.set('cache-control', cacheControl);
   }
 
-  return new NextResponse(asset.data, {
-    headers: {
-      'Content-Type': asset.mimeType,
-      'Cache-Control': 'public, max-age=31536000, immutable',
-      'Content-Disposition': `inline; filename="${asset.fileName}"`
-    }
-  });
+  return proxied;
 }

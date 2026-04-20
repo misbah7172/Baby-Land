@@ -1,17 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { dispatchApiRequest, requireAdminAccess } from '@/lib/server';
+import { getBackendApiBase } from '@/lib/backend';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    await requireAdminAccess(request);
-    return dispatchApiRequest(request, ['upload', 'image']);
+    const backendBase = getBackendApiBase();
+    const targetUrl = new URL('/api/upload/image', backendBase);
+    const response = await fetch(targetUrl, {
+      method: 'POST',
+      headers: request.headers,
+      body: await request.arrayBuffer()
+    });
+
+    const body = await response.arrayBuffer();
+    const proxied = new NextResponse(body, { status: response.status });
+    const contentType = response.headers.get('content-type');
+    if (contentType) {
+      proxied.headers.set('content-type', contentType);
+    }
+
+    return proxied;
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Upload failed';
-    const status = typeof (error as { status?: number } | null)?.status === 'number' ? (error as { status: number }).status : 500;
-    return NextResponse.json({ message }, { status });
+    return NextResponse.json({ message }, { status: 500 });
   }
 }

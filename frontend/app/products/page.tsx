@@ -25,18 +25,30 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   const language = normalizeLanguage(cookieStore.get('babyland-lang')?.value);
   const text = getCopy(language);
   const resolvedSearchParams = await searchParams;
-  const [productsResponse, categoriesResponse] = await Promise.all([
-    getProducts({
-      q: first(resolvedSearchParams.q),
-      category: first(resolvedSearchParams.category),
-      minPrice: first(resolvedSearchParams.minPrice),
-      maxPrice: first(resolvedSearchParams.maxPrice),
-      size: first(resolvedSearchParams.size),
-      page: first(resolvedSearchParams.page) || '1',
-      limit: first(resolvedSearchParams.limit) || '12'
-    }),
-    getCategories()
-  ]);
+  let productsResponse: Awaited<ReturnType<typeof getProducts>> = {
+    products: [],
+    total: 0,
+    page: 1,
+    limit: 12
+  };
+  let categoriesResponse: Awaited<ReturnType<typeof getCategories>> = { categories: [] };
+
+  try {
+    [productsResponse, categoriesResponse] = await Promise.all([
+      getProducts({
+        q: first(resolvedSearchParams.q),
+        category: first(resolvedSearchParams.category),
+        minPrice: first(resolvedSearchParams.minPrice),
+        maxPrice: first(resolvedSearchParams.maxPrice),
+        size: first(resolvedSearchParams.size),
+        page: first(resolvedSearchParams.page) || '1',
+        limit: first(resolvedSearchParams.limit) || '12'
+      }),
+      getCategories()
+    ]);
+  } catch {
+    // Keep the products page available during API outages.
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 md:px-8 md:py-16">

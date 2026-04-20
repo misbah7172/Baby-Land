@@ -18,12 +18,26 @@ export default async function HomePage() {
   const cookieStore = await cookies();
   const language = normalizeLanguage(cookieStore.get('babyland-lang')?.value);
   const text = getCopy(language);
-  const [{ products }, { categories }, { settings }, { reviews }] = await Promise.all([
-    getProducts({ featured: 'true', limit: '6' }),
-    getCategories(),
-    getHomepageSettings(),
-    getPublicReviews(3)
-  ]);
+  let products: Awaited<ReturnType<typeof getProducts>>['products'] = [];
+  let categories: Awaited<ReturnType<typeof getCategories>>['categories'] = [];
+  let settings: Record<string, unknown> = {};
+  let reviews: Awaited<ReturnType<typeof getPublicReviews>>['reviews'] = [];
+
+  try {
+    const [productsResponse, categoriesResponse, homepageSettingsResponse, reviewsResponse] = await Promise.all([
+      getProducts({ featured: 'true', limit: '6' }),
+      getCategories(),
+      getHomepageSettings(),
+      getPublicReviews(3)
+    ]);
+
+    products = productsResponse.products;
+    categories = categoriesResponse.categories;
+    settings = homepageSettingsResponse.settings;
+    reviews = reviewsResponse.reviews;
+  } catch {
+    // Render the storefront shell even if the API is temporarily unavailable.
+  }
 
   const heroBadge = typeof settings.heroBadge === 'string' ? settings.heroBadge : text.home.badge;
   const heroTitle = typeof settings.heroTitle === 'string' ? settings.heroTitle : text.home.title;

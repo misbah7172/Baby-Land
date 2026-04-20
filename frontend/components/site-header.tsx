@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 import { useAuth } from '@/lib/auth-context';
 import { useCart } from '@/lib/cart-context';
@@ -22,8 +22,13 @@ export function SiteHeader() {
   const { itemCount } = useCart();
   const { language, setLanguage } = useLanguage();
   const router = useRouter();
+  const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const text = getCopy(language);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   const handleLogout = async () => {
     await logout();
@@ -37,8 +42,11 @@ export function SiteHeader() {
     router.refresh();
   };
 
+  const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname?.startsWith(href));
+
   return (
-    <header className="sticky top-0 z-40 border-b border-white/60 bg-white/75 backdrop-blur-xl">
+    <>
+      <header className="sticky top-0 z-40 border-b border-white/60 bg-white/75 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-8">
         <Link href="/" className="flex items-center gap-2">
           <span className="text-2xl font-bold text-rosewood">🍼</span>
@@ -96,24 +104,19 @@ export function SiteHeader() {
           )}
         </div>
 
-        <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="p-2 md:hidden"
-          aria-label="Toggle menu"
-        >
-          <svg className="h-6 w-6 text-stone-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d={mobileMenuOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'}
-            />
-          </svg>
-        </button>
+        <div className="md:hidden" />
       </div>
+      </header>
 
       {mobileMenuOpen ? (
-        <div className="border-t border-white/60 bg-white/95 md:hidden">
+        <>
+          <button
+            type="button"
+            aria-label="Close mobile menu"
+            onClick={() => setMobileMenuOpen(false)}
+            className="fixed inset-0 z-40 bg-[#3d2a25]/20 backdrop-blur-[1px] md:hidden"
+          />
+          <div className="fixed inset-x-0 bottom-[72px] z-50 mx-auto w-[calc(100%-16px)] max-w-md rounded-3xl border border-[#FADADD] bg-white/95 p-4 shadow-[0_20px_50px_-20px_rgba(90,60,52,0.45)] backdrop-blur md:hidden">
           <nav className="flex flex-col gap-2 p-4">
             {navLinks.map((link) => (
               <Link
@@ -172,8 +175,76 @@ export function SiteHeader() {
               )}
             </div>
           </nav>
-        </div>
+          </div>
+        </>
       ) : null}
-    </header>
+
+      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[#FADADD] bg-white/95 shadow-[0_-12px_30px_-20px_rgba(90,60,52,0.55)] backdrop-blur-xl md:hidden">
+        <div className="mx-auto flex max-w-md items-center justify-between px-2 pb-[max(8px,env(safe-area-inset-bottom))] pt-2">
+          {navLinks.map((link) => {
+            const active = Boolean(isActive(link.href));
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`relative flex min-w-[64px] flex-col items-center gap-1 rounded-2xl px-3 py-2 text-[11px] font-semibold transition ${
+                  active ? 'bg-[#FFE9E2] text-rosewood' : 'text-stone-500 hover:bg-[#FFF3EE]'
+                }`}
+              >
+                {link.key === 'home' ? (
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 10.5 12 3l9 7.5" />
+                    <path d="M5 9.5V21h14V9.5" />
+                  </svg>
+                ) : null}
+                {link.key === 'products' ? (
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="5" width="18" height="14" rx="2" />
+                    <path d="M3 9h18" />
+                  </svg>
+                ) : null}
+                {link.key === 'cart' ? (
+                  <span className="relative inline-flex">
+                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="9" cy="20" r="1.5" />
+                      <circle cx="18" cy="20" r="1.5" />
+                      <path d="M3 4h2l2.4 10.5a2 2 0 0 0 2 1.5h7.7a2 2 0 0 0 2-1.6L21 7H7" />
+                    </svg>
+                    {itemCount > 0 ? (
+                      <span className="absolute -right-2 -top-2 inline-flex min-w-4 items-center justify-center rounded-full bg-[#FFB6A3] px-1 text-[10px] font-bold leading-4 text-white">
+                        {itemCount}
+                      </span>
+                    ) : null}
+                  </span>
+                ) : null}
+                {link.key === 'profile' ? (
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="8" r="4" />
+                    <path d="M4 21a8 8 0 0 1 16 0" />
+                  </svg>
+                ) : null}
+                <span>{text.nav[link.key]}</span>
+              </Link>
+            );
+          })}
+
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+            className={`flex min-w-[64px] flex-col items-center gap-1 rounded-2xl px-3 py-2 text-[11px] font-semibold transition ${
+              mobileMenuOpen ? 'bg-[#FFE9E2] text-rosewood' : 'text-stone-500 hover:bg-[#FFF3EE]'
+            }`}
+            aria-label="Toggle bottom menu"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 7h16" />
+              <path d="M7 12h10" />
+              <path d="M10 17h4" />
+            </svg>
+            <span>More</span>
+          </button>
+        </div>
+      </nav>
+    </>
   );
 }

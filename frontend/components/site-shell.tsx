@@ -18,7 +18,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <SiteHeader />
-      <main>{children}</main>
+      <main className="pb-24 md:pb-0">{children}</main>
       <ReviewPrompt />
       <SiteFooter />
     </>

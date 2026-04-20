@@ -37,9 +37,16 @@ async function proxyToBackend(request: NextRequest, path: string[]) {
     if (contentType) {
       proxied.headers.set('content-type', contentType);
     }
-    const setCookie = response.headers.get('set-cookie');
-    if (setCookie) {
-      proxied.headers.set('set-cookie', setCookie);
+    const setCookies = (response.headers as unknown as { getSetCookie?: () => string[] }).getSetCookie?.() || [];
+    if (setCookies.length > 0) {
+      for (const cookie of setCookies) {
+        proxied.headers.append('set-cookie', cookie);
+      }
+    } else {
+      const setCookie = response.headers.get('set-cookie');
+      if (setCookie) {
+        proxied.headers.set('set-cookie', setCookie);
+      }
     }
 
     return proxied;

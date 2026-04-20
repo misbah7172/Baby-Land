@@ -24,7 +24,8 @@ const backendServerBase =
   normalizeBackendUrl(process.env.NEXT_PUBLIC_BACKEND_URL) ||
   'http://127.0.0.1:4000';
 
-const backendClientBase = normalizeBackendUrl(process.env.NEXT_PUBLIC_BACKEND_URL) || '';
+// Always use same-origin proxy from browser (frontend /api/[...path]) so auth/cart cookies are first-party.
+const backendClientBase = '';
 
 export function getBackendApiBase() {
   return isServerRuntime ? backendServerBase : backendClientBase;

@@ -14,10 +14,10 @@ export const adminRouter = Router();
 function hasEnvAdminCredentials(request: AuthenticatedRequest) {
   const adminEmail = request.header('x-admin-email');
   const adminPassword = request.header('x-admin-password');
-  const expectedEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || env.ADMIN_EMAIL;
-  const expectedPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD_HASH || env.ADMIN_PASSWORD;
+  const validEmails = new Set([env.ADMIN_EMAIL, process.env.NEXT_PUBLIC_ADMIN_EMAIL].filter(Boolean));
+  const validPasswords = new Set([env.ADMIN_PASSWORD, process.env.NEXT_PUBLIC_ADMIN_PASSWORD_HASH].filter(Boolean));
 
-  return adminEmail === expectedEmail && adminPassword === expectedPassword;
+  return Boolean(adminEmail && adminPassword && validEmails.has(adminEmail) && validPasswords.has(adminPassword));
 }
 
 function adminAccessRequired(request: AuthenticatedRequest, response: import('express').Response, next: import('express').NextFunction) {

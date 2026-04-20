@@ -10,6 +10,19 @@ import { validate } from '../middleware/validate';
 
 export const cartRouter = Router();
 
+function getCookieDomain(rawDomain: string | undefined) {
+  if (!rawDomain) {
+    return undefined;
+  }
+
+  const normalized = rawDomain.trim().replace(/^https?:\/\//, '').split('/')[0];
+  if (!normalized || normalized === 'localhost') {
+    return undefined;
+  }
+
+  return normalized;
+}
+
 const cartItemSchema = z.object({
   body: z.object({
     productId: z.string().min(1),
@@ -84,11 +97,12 @@ async function ensureGuestId(request: AuthenticatedRequest, response: import('ex
   let guestId = request.cookies.guest_cart_id as string | undefined;
   if (!guestId) {
     guestId = randomUUID();
+    const domain = getCookieDomain(process.env.COOKIE_DOMAIN);
     response.cookie('guest_cart_id', guestId, {
       httpOnly: true,
       sameSite: 'lax',
       secure: process.env.COOKIE_SECURE === 'true',
-      domain: process.env.COOKIE_DOMAIN || undefined,
+      domain,
       path: '/',
       maxAge: 30 * 24 * 60 * 60 * 1000
     });

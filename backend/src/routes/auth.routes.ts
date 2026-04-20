@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { Router } from 'express';
 import { z } from 'zod';
+import { Role } from '@prisma/client';
 
 import { authRequired, optionalAuth, refreshTokenUser, AuthenticatedRequest } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
@@ -24,6 +25,49 @@ const loginSchema = z.object({
     password: z.string().min(8)
   })
 });
+
+const firebaseSessionSchema = z.object({
+  body: z.object({
+    idToken: z.string().min(20)
+  })
+});
+
+type FirebaseLookupResponse = {
+  users?: Array<{
+    localId?: string;
+    email?: string;
+    displayName?: string;
+  }>;
+};
+
+async function lookupFirebaseUser(idToken: string) {
+  const apiKey = process.env.FIREBASE_API_KEY || process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  if (!apiKey) {
+    throw new Error('Firebase API key not configured');
+  }
+
+  const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ idToken })
+  });
+
+  if (!response.ok) {
+    throw new Error('Invalid Firebase token');
+  }
+
+  const data = (await response.json()) as FirebaseLookupResponse;
+  const user = data.users?.[0];
+  if (!user?.localId || !user.email) {
+    throw new Error('Firebase user profile incomplete');
+  }
+
+  return {
+    uid: user.localId,
+    email: user.email,
+    name: user.displayName || user.email.split('@')[0] || 'Google User'
+  };
+}
 
 authRouter.post('/register', validate(registerSchema), async (request, response, next) => {
   try {
@@ -108,6 +152,45 @@ authRouter.post('/logout', async (request, response, next) => {
 
     clearAuthCookies(response);
     response.json({ ok: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
+authRouter.post('/firebase-session', validate(firebaseSessionSchema), async (request, response, next) => {
+  try {
+    const body = (request as import('express').Request & { validated?: z.infer<typeof firebaseSessionSchema> }).validated?.body;
+    if (!body) {
+      response.status(400).json({ message: 'Invalid payload' });
+      return;
+    }
+
+    const firebaseUser = await lookupFirebaseUser(body.idToken);
+
+    const generatedPasswordHash = await bcrypt.hash(`firebase:${firebaseUser.uid}`, 10);
+    const user = await prisma.user.upsert({
+      where: { email: firebaseUser.email },
+      update: { name: firebaseUser.name },
+      create: {
+        name: firebaseUser.name,
+        email: firebaseUser.email,
+        passwordHash: generatedPasswordHash,
+        role: Role.CUSTOMER
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        phone: true,
+        createdAt: true
+      }
+    });
+
+    const tokenPair = await createTokenPair({ id: user.id, email: user.email, role: user.role });
+    setAuthCookies(response, tokenPair.accessToken, tokenPair.refreshToken);
+
+    response.json({ user });
   } catch (error) {
     next(error);
   }

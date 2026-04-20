@@ -457,7 +457,7 @@ async function resolveAdminAccess(request: NextRequest) {
   return Boolean(user && user.role === 'ADMIN');
 }
 
-async function requireAdminAccess(request: NextRequest) {
+export async function requireAdminAccess(request: NextRequest) {
   if (!(await resolveAdminAccess(request))) {
     throw new ApiError(403, 'Admin access required');
   }

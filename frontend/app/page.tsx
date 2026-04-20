@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { getCategories, getHomepageSettings, getProducts, getPublicReviews } from '@/lib/api';
 import { getCopy, normalizeLanguage } from '@/lib/i18n';
 import { ProductCard } from '@/components/product-card';
+import { SafeImage } from '@/components/safe-image';
 
 function normalizeImageUrl(url: string) {
   if (url.startsWith('http://') && url.includes('.up.railway.app')) {
@@ -116,13 +117,11 @@ export default async function HomePage() {
           <div className="bg-gradient-to-br from-[#D6EAF8] to-[#D5F5E3] rounded-3xl h-96 md:h-[500px] overflow-hidden">
             {heroImageUrl ? (
               <div className="relative h-full w-full">
-                <Image
+                <SafeImage
                   src={heroImageUrl}
                   alt="Homepage hero"
-                  fill
-                  priority
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  className="object-cover"
+                  loading="eager"
+                  className="absolute inset-0 h-full w-full object-cover"
                 />
               </div>
             ) : (

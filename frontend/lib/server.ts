@@ -39,7 +39,7 @@ declare global {
   var __babyLandPrisma: PrismaClient | undefined;
 }
 
-const prisma = globalThis.__babyLandPrisma ?? new PrismaClient();
+export const prisma = globalThis.__babyLandPrisma ?? new PrismaClient();
 if (process.env.NODE_ENV !== 'production') {
   globalThis.__babyLandPrisma = prisma;
 }
@@ -132,112 +132,218 @@ function asNumber(value: unknown, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function getCookieDomain() {
-  const rawDomain = process.env.COOKIE_DOMAIN?.trim();
-  if (!rawDomain) {
-    return undefined;
-  }
-
-  let parsedDomain = rawDomain;
-
-  if (rawDomain.includes('://')) {
-    try {
-      parsedDomain = new URL(rawDomain).hostname;
-    } catch {
-      return undefined;
-    }
-  }
-
-  parsedDomain = parsedDomain.replace(/:\d+$/, '').replace(/\/$/, '');
-
-  if (!parsedDomain || parsedDomain === 'localhost' || parsedDomain.includes('/')) {
-    return undefined;
-  }
-
-  return parsedDomain;
+function hashToken(token: string) {
+  return crypto.createHash('sha256').update(token).digest('hex');
 }
 
-function setCookie(response: NextResponse, name: string, value: string, maxAge?: number) {
+function isAdminHeaderAuthorized(request: NextRequest) {
+  return request.headers.get('x-admin-email') === adminEmail && request.headers.get('x-admin-password') === adminPasswordHash;
+}
+
+function setCookie(response: NextResponse, name: string, value: string, maxAgeSeconds: number) {
   response.cookies.set({
-    ...cookieBase,
     name,
     value,
-    domain: getCookieDomain(),
-    maxAge
+    ...cookieBase,
+    maxAge: maxAgeSeconds
   });
 }
 
 function clearCookie(response: NextResponse, name: string) {
   response.cookies.set({
-    ...cookieBase,
     name,
     value: '',
-    domain: getCookieDomain(),
+    ...cookieBase,
+    expires: new Date(0),
     maxAge: 0
   });
 }
 
-function json(data: unknown, init?: ResponseInit) {
-  return NextResponse.json(data, init);
-}
-
-function getAccessTokenPayload(token: string) {
-  return jwt.verify(token, process.env.JWT_ACCESS_SECRET || 'change-me-access') as jwt.JwtPayload & { sub?: string };
-}
-
-function getRefreshTokenPayload(token: string) {
-  return jwt.verify(token, process.env.JWT_REFRESH_SECRET || 'change-me-refresh') as jwt.JwtPayload & { sub?: string };
-}
-
 function signAccessToken(user: SessionUser) {
+  const secret = process.env.JWT_ACCESS_SECRET;
+  if (!secret) {
+    throw new ApiError(500, 'JWT_ACCESS_SECRET is not configured on the server');
+  }
+
   return jwt.sign(
-    { role: user.role, email: user.email },
-    process.env.JWT_ACCESS_SECRET || 'change-me-access',
+    { name: user.name, email: user.email, role: user.role, phone: user.phone },
+    secret,
     { subject: user.id, expiresIn: ACCESS_TOKEN_TTL }
   );
 }
 
 function signRefreshToken(user: SessionUser) {
+  const secret = process.env.JWT_REFRESH_SECRET;
+  if (!secret) {
+    throw new ApiError(500, 'JWT_REFRESH_SECRET is not configured on the server');
+  }
+
   return jwt.sign(
-    { role: user.role, email: user.email, type: 'refresh' },
-    process.env.JWT_REFRESH_SECRET || 'change-me-refresh',
-    { subject: user.id, expiresIn: '30d' }
+    { name: user.name, email: user.email, role: user.role, phone: user.phone },
+    secret,
+    { subject: user.id, expiresIn: REFRESH_TOKEN_TTL_MS / 1000 }
   );
 }
 
-function hashToken(token: string) {
-  return crypto.createHash('sha256').update(token).digest('hex');
+function getAccessTokenPayload(token: string) {
+  const secret = process.env.JWT_ACCESS_SECRET;
+  if (!secret) {
+    throw new ApiError(500, 'JWT_ACCESS_SECRET is not configured on the server');
+  }
+
+  return jwt.verify(token, secret) as jwt.JwtPayload;
 }
 
-function normalizeSize(size: unknown): SizeOption {
-  return sizeOptions.has(String(size) as SizeOption) ? (String(size) as SizeOption) : 'ONE_SIZE';
+function getRefreshTokenPayload(token: string) {
+  const secret = process.env.JWT_REFRESH_SECRET;
+  if (!secret) {
+    throw new ApiError(500, 'JWT_REFRESH_SECRET is not configured on the server');
+  }
+
+  return jwt.verify(token, secret) as jwt.JwtPayload;
 }
 
-function normalizePaymentMethod(value: unknown): PaymentMethod {
-  const method = String(value || 'COD').toUpperCase() as PaymentMethod;
-  return paymentMethodOptions.has(method) ? method : 'COD';
+function normalizeSize(value?: string | null) {
+  const candidate = (value || 'ONE_SIZE').toUpperCase() as SizeOption;
+  return sizeOptions.has(candidate) ? candidate : 'ONE_SIZE';
 }
 
-function normalizeOrderStatus(value: unknown): OrderStatus {
-  const status = String(value || 'PENDING').toUpperCase() as OrderStatus;
-  return orderStatusOptions.has(status) ? status : 'PENDING';
+function normalizePaymentMethod(value?: string | null) {
+  const candidate = (value || 'COD').toUpperCase() as PaymentMethod;
+  return paymentMethodOptions.has(candidate) ? candidate : 'COD';
+}
+
+function normalizeOrderStatus(value?: string | null) {
+  const candidate = (value || 'PENDING').toUpperCase() as OrderStatus;
+  return orderStatusOptions.has(candidate) ? candidate : 'PENDING';
 }
 
 async function readJsonBody<T>(request: NextRequest): Promise<T> {
   try {
     return await request.json() as T;
   } catch {
-    throw new ApiError(400, 'Invalid JSON body');
+    throw new ApiError(400, 'Invalid JSON payload');
   }
 }
 
-function isAdminHeaderAuthorized(request: NextRequest) {
-  return Boolean(
-    adminEmail &&
-      adminPasswordHash &&
-      request.headers.get('x-admin-email') === adminEmail &&
-      request.headers.get('x-admin-password') === adminPasswordHash
-  );
+function json(body: unknown, init?: ResponseInit) {
+  return NextResponse.json(body, init);
+}
+
+async function handleUpload(request: NextRequest) {
+  if (request.method !== 'POST') {
+    throw new ApiError(405, 'Method not allowed');
+  }
+
+  const formData = await request.formData();
+  const fileEntry = formData.get('file');
+
+  if (!(fileEntry instanceof File)) {
+    throw new ApiError(400, 'No file was uploaded');
+  }
+
+  const file = fileEntry;
+  const image = await prisma.imageAsset.create({
+    data: {
+      fileName: file.name || 'upload.jpg',
+      mimeType: file.type || 'image/jpeg',
+      data: Buffer.from(await file.arrayBuffer())
+    }
+  });
+
+  return NextResponse.json({
+    assetId: image.id,
+    url: `/api/product-images/${image.id}`
+  });
+}
+
+export async function dispatchApiRequest(request: NextRequest, segments: string[]) {
+  try {
+    if (segments[0] === 'auth') {
+      return await handleAuth(request, segments);
+    }
+
+    if (segments[0] === 'products') {
+      return await handleProducts(request, segments);
+    }
+
+    if (segments[0] === 'categories') {
+      return await handleCategories(request, segments);
+    }
+
+    if (segments[0] === 'cart') {
+      return await handleCart(request, segments);
+    }
+
+    if (segments[0] === 'orders') {
+      return await handleOrders(request, segments);
+    }
+
+    if (segments[0] === 'reviews') {
+      return await handleReviews(request, segments);
+    }
+
+    if (segments[0] === 'settings') {
+      return await handleSettings(request, segments);
+    }
+
+    if (segments[0] === 'admin') {
+      return await handleAdmin(request, segments);
+    }
+
+    if (segments[0] === 'upload' && segments[1] === 'image') {
+      return await handleUpload(request);
+    }
+
+    throw new ApiError(404, 'API route not found');
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return json({ message: error.message }, { status: error.status });
+    }
+
+    if (segments[0] === 'admin' && (error instanceof Prisma.PrismaClientInitializationError || error instanceof Prisma.PrismaClientValidationError || error instanceof Prisma.PrismaClientKnownRequestError || error instanceof Error)) {
+      if (segments[1] === 'analytics') {
+        return json({ totalOrders: 0, totalSales: '0.00', topProducts: [] });
+      }
+      if (segments[1] === 'products' && request.method === 'GET') {
+        return json({ products: [] });
+      }
+      if (segments[1] === 'categories' && request.method === 'GET') {
+        return json({ categories: [] });
+      }
+      if (segments[1] === 'orders' && request.method === 'GET') {
+        return json({ orders: [] });
+      }
+      if (segments[1] === 'users' && request.method === 'GET') {
+        return json({ users: [] });
+      }
+      if (segments[1] === 'reviews' && request.method === 'GET') {
+        return json({ reviews: [] });
+      }
+      if (segments[1] === 'settings' && segments[2] === 'homepage') {
+        return json({ settings: {} });
+      }
+    }
+
+    if (error instanceof Prisma.PrismaClientInitializationError || error instanceof Prisma.PrismaClientValidationError) {
+      if (segments[0] === 'cart' && request.method === 'GET') {
+        return json({ cart: { items: [], subtotal: '0.00', itemCount: 0 } });
+      }
+
+      if (!process.env.DATABASE_URL) {
+        return json({ message: 'DATABASE_URL is missing on the server. Set it in Vercel Environment Variables and redeploy.' }, { status: 503 });
+      }
+
+      return json({ message: 'Database connection failed. Verify DATABASE_URL points to your Supabase Postgres and redeploy.' }, { status: 503 });
+    }
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return json({ message: 'Database request failed. Please try again.' }, { status: 500 });
+    }
+
+    console.error(error);
+    return json({ message: 'Internal server error' }, { status: 500 });
+  }
 }
 
 async function resolveSessionUser(request: NextRequest): Promise<SessionUser | null> {
@@ -1491,101 +1597,3 @@ async function handleAdmin(request: NextRequest, segments: string[]) {
   throw new ApiError(404, 'Admin route not found');
 }
 
-async function handleUpload(request: NextRequest) {
-  if (request.method !== 'POST') {
-    throw new ApiError(405, 'Method not allowed');
-  }
-
-  throw new ApiError(501, 'File uploads are not supported in Vercel-only mode. Paste public image URLs instead.');
-}
-
-export async function dispatchApiRequest(request: NextRequest, segments: string[]) {
-  try {
-    if (segments[0] === 'auth') {
-      return await handleAuth(request, segments);
-    }
-
-    if (segments[0] === 'products') {
-      return await handleProducts(request, segments);
-    }
-
-    if (segments[0] === 'categories') {
-      return await handleCategories(request, segments);
-    }
-
-    if (segments[0] === 'cart') {
-      return await handleCart(request, segments);
-    }
-
-    if (segments[0] === 'orders') {
-      return await handleOrders(request, segments);
-    }
-
-    if (segments[0] === 'reviews') {
-      return await handleReviews(request, segments);
-    }
-
-    if (segments[0] === 'settings') {
-      return await handleSettings(request, segments);
-    }
-
-    if (segments[0] === 'admin') {
-      return await handleAdmin(request, segments);
-    }
-
-    if (segments[0] === 'upload' && segments[1] === 'image') {
-      return await handleUpload(request);
-    }
-
-    throw new ApiError(404, 'API route not found');
-  } catch (error) {
-    if (error instanceof ApiError) {
-      return json({ message: error.message }, { status: error.status });
-    }
-
-    // Admin endpoints fallback for ANY error during db initialization
-    if (segments[0] === 'admin' && (error instanceof Prisma.PrismaClientInitializationError || error instanceof Prisma.PrismaClientValidationError || error instanceof Prisma.PrismaClientKnownRequestError || error instanceof Error)) {
-      if (segments[1] === 'analytics') {
-        return json({ totalOrders: 0, totalSales: '0.00', topProducts: [] });
-      }
-      if (segments[1] === 'products' && request.method === 'GET') {
-        return json({ products: [] });
-      }
-      if (segments[1] === 'categories' && request.method === 'GET') {
-        return json({ categories: [] });
-      }
-      if (segments[1] === 'orders' && request.method === 'GET') {
-        return json({ orders: [] });
-      }
-      if (segments[1] === 'users' && request.method === 'GET') {
-        return json({ users: [] });
-      }
-      if (segments[1] === 'reviews' && request.method === 'GET') {
-        return json({ reviews: [] });
-      }
-      if (segments[1] === 'settings' && segments[2] === 'homepage') {
-        return json({ settings: {} });
-      }
-    }
-
-    if (error instanceof Prisma.PrismaClientInitializationError || error instanceof Prisma.PrismaClientValidationError) {
-      // Cart fallback
-      if (segments[0] === 'cart' && request.method === 'GET') {
-        return json({ cart: { items: [], subtotal: '0.00', itemCount: 0 } });
-      }
-
-      if (!process.env.DATABASE_URL) {
-        return json({ message: 'DATABASE_URL is missing on the server. Set it in Vercel Environment Variables and redeploy.' }, { status: 503 });
-      }
-
-      return json({ message: 'Database connection failed. Verify DATABASE_URL points to your Supabase Postgres and redeploy.' }, { status: 503 });
-    }
-
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      return json({ message: 'Database request failed. Please try again.' }, { status: 500 });
-    }
-
-    console.error(error);
-    return json({ message: 'Internal server error' }, { status: 500 });
-  }
-}

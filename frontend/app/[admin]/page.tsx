@@ -731,7 +731,7 @@ export default function AdminDashboard() {
               </div>
               <div className="space-y-2">
                 <input type="file" accept="image/*" onChange={handleUploadImage} className="w-full rounded-xl border border-dashed border-[#FADADD] px-4 py-2" />
-                <p className="text-xs text-[#777777]">{uploadingImage ? 'Uploading image...' : 'Upload adds the public image URL into the list below.'}</p>
+                <p className="text-xs text-[#777777]">{uploadingImage ? 'Uploading image...' : 'Upload stores the image in Supabase Postgres and adds the optimized URL below.'}</p>
                 {imageUploadMessage ? <p className="text-xs text-[#2d7a5e]">{imageUploadMessage}</p> : null}
               </div>
               <textarea value={newProduct.imageUrls} onChange={(event) => setNewProduct((prev) => ({ ...prev, imageUrls: readInputValue(event) }))} placeholder="Image URLs (comma separated)" className="w-full rounded-xl border border-[#FADADD] px-4 py-2" rows={3} />

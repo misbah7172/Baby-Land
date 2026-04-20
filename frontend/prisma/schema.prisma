@@ -122,6 +122,14 @@ model ProductImage {
   @@index([productId, sortOrder])
 }
 
+model ImageAsset {
+  id        String   @id @default(cuid())
+  fileName  String
+  mimeType  String
+  data      Bytes
+  createdAt DateTime @default(now())
+}
+
 model ProductSizeOption {
   id        String     @id @default(cuid())
   productId String

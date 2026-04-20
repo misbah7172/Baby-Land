@@ -34,7 +34,14 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           <Card className="overflow-hidden border border-[#FADADD] p-0">
             <div className="relative aspect-square bg-gradient-to-br from-[#FFF8F0] via-white to-[#FADADD]">
-              <Image src={image} alt={product.name} fill className="object-cover" />
+              <Image
+                src={image}
+                alt={product.name}
+                fill
+                priority
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover"
+              />
             </div>
           </Card>
           <div className="space-y-6">

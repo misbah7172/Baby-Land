@@ -1,0 +1,12 @@
+node_modules
+dist
+.next
+.turbo
+.env
+.DS_Store
+coverage
+frontend/.next
+frontend/node_modules
+backend/dist
+backend/node_modules
+*.log

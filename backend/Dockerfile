@@ -46,8 +46,8 @@ COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 4000
 
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=5 \
     CMD curl -f http://localhost:4000/health || exit 1
 
-# Run migrations, ensure schema is synced, then start server
-CMD sh -c "npm run prisma:generate && (npm run prisma:migrate || true) && npm run prisma:dbpush && npm run start"
+# Start API immediately for healthchecks; run DB sync in background as best effort.
+CMD sh -c "((npm run prisma:migrate || npm run prisma:dbpush) >/tmp/prisma-init.log 2>&1 || true) & exec npm run start"

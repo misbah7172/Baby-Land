@@ -1,13 +1,35 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 function normalizeImageUrl(url: string) {
-  if (url.startsWith('http://') && url.includes('.up.railway.app')) {
-    return url.replace('http://', 'https://');
+  const value = (url || '').trim();
+
+  if (!value) {
+    return value;
   }
 
-  return url;
+  if (value.startsWith('http://') && value.includes('.up.railway.app')) {
+    return value.replace('http://', 'https://');
+  }
+
+  if (value.startsWith('/uploads/')) {
+    return value;
+  }
+
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    try {
+      const parsed = new URL(value);
+      if (parsed.pathname.startsWith('/uploads/')) {
+        return `${parsed.pathname}${parsed.search}`;
+      }
+      return parsed.toString();
+    } catch {
+      return value;
+    }
+  }
+
+  return value;
 }
 
 export function SafeImage({
@@ -25,7 +47,12 @@ export function SafeImage({
   style?: React.CSSProperties;
   loading?: 'lazy' | 'eager';
 }) {
-  const [currentSrc, setCurrentSrc] = useState(normalizeImageUrl(src || fallback));
+  const resolvedSrc = normalizeImageUrl(src || fallback);
+  const [currentSrc, setCurrentSrc] = useState(resolvedSrc);
+
+  useEffect(() => {
+    setCurrentSrc(resolvedSrc);
+  }, [resolvedSrc]);
 
   return (
     <img

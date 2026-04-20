@@ -11,6 +11,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useLanguage } from '@/lib/language-context';
 import { getCopy } from '@/lib/i18n';
 import { Button, Card } from '@/components/ui';
+import { signInWithGooglePopup } from '@/lib/firebase';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,6 +20,7 @@ export default function LoginPage() {
   const text = getCopy(language);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -35,6 +37,21 @@ export default function LoginPage() {
       setMessage(error instanceof Error ? error.message : 'Login failed');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    setGoogleLoading(true);
+    try {
+      await signInWithGooglePopup();
+      await refreshUser();
+      setMessage('Signed in successfully with Google. Redirecting...');
+      router.push('/');
+      router.refresh();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Google sign-in failed');
+    } finally {
+      setGoogleLoading(false);
     }
   }
 
@@ -68,6 +85,14 @@ export default function LoginPage() {
             <Button type="submit" className="w-full bg-[#FFB6A3] text-white hover:opacity-90" disabled={loading}>
               {loading ? text.login.submitting : text.login.submit}
             </Button>
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={googleLoading}
+              className="w-full rounded-2xl border border-[#FADADD] bg-white px-4 py-3 text-sm font-semibold text-[#333333] transition hover:bg-[#FFF8F0] disabled:opacity-60"
+            >
+              {googleLoading ? 'Signing in with Google...' : 'Continue with Google'}
+            </button>
             {message && (
               <div className={`p-3 rounded-2xl text-sm text-center ${
                 message.includes('successfully') 

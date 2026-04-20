@@ -1,9 +1,11 @@
 'use client';
 
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
 
 import { getMe, logout as apiLogout } from './api';
 import type { SessionUser } from './types';
+import { auth, signOutFirebase } from './firebase';
 
 interface AuthContextType {
   user: SessionUser | null;
@@ -20,23 +22,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const refreshUser = async () => {
-    const result = await getMe();
-    setUser(result.user);
-    return result.user;
+    try {
+      const result = await getMe();
+      setUser(result.user);
+      return result.user;
+    } catch {
+      setUser(null);
+      return null;
+    }
   };
 
   useEffect(() => {
     refreshUser()
-      .catch(() => {
-        setUser(null);
-      })
       .finally(() => {
         setLoading(false);
       });
   }, []);
 
+  useEffect(() => {
+    if (!auth) {
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, firebaseUser => {
+      if (!firebaseUser) {
+        return;
+      }
+
+      setUser(currentUser => {
+        if (currentUser?.email) {
+          return currentUser;
+        }
+
+        return {
+          id: firebaseUser.uid,
+          name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Google User',
+          email: firebaseUser.email || 'unknown@google.local',
+          role: 'CUSTOMER',
+          phone: firebaseUser.phoneNumber
+        };
+      });
+    });
+
+    return unsubscribe;
+  }, []);
+
   const logout = async () => {
-    await apiLogout();
+    try {
+      await apiLogout();
+    } catch {
+      // Ignore backend logout errors for Firebase-only sessions.
+    }
+    await signOutFirebase();
     setUser(null);
   };
 

@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { GoogleAuthProvider, getAuth, signInWithPopup, signOut } from 'firebase/auth';
 import type { FirebaseOptions } from 'firebase/app';
 
 function createFirebaseConfig(): FirebaseOptions | null {
@@ -29,5 +29,26 @@ const app = firebaseConfig ? initializeApp(firebaseConfig) : null;
 
 // Initialize Firebase Authentication and get a reference to the service
 export const auth = app ? getAuth(app) : null;
+export const googleProvider = auth ? new GoogleAuthProvider() : null;
+
+if (googleProvider) {
+  googleProvider.setCustomParameters({ prompt: 'select_account' });
+}
+
+export async function signInWithGooglePopup() {
+  if (!auth || !googleProvider) {
+    throw new Error('Firebase is not configured. Please set Firebase environment variables.');
+  }
+
+  return signInWithPopup(auth, googleProvider);
+}
+
+export async function signOutFirebase() {
+  if (!auth) {
+    return;
+  }
+
+  await signOut(auth);
+}
 
 export default app;

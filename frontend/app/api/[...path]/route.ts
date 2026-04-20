@@ -14,24 +14,42 @@ function getForwardHeaders(request: NextRequest) {
 }
 
 async function proxyToBackend(request: NextRequest, path: string[]) {
-  // Anything outside the lightweight Next routes is forwarded to the Express backend.
-  const backendBase = getBackendApiBase();
-  const targetUrl = new URL(`/api/${path.join('/')}`, backendBase);
-  targetUrl.search = request.nextUrl.search;
+  try {
+    // Anything outside the lightweight Next routes is forwarded to the Express backend.
+    const backendBase = getBackendApiBase();
+    const targetUrl = new URL(`/api/${path.join('/')}`, backendBase);
+    targetUrl.search = request.nextUrl.search;
 
-  const requestBody = request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.arrayBuffer();
-  const response = await fetch(targetUrl, {
-    method: request.method,
-    headers: getForwardHeaders(request),
-    ...(requestBody ? { body: requestBody } : {})
-  });
+    const requestBody = request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.arrayBuffer();
+    const response = await fetch(targetUrl, {
+      method: request.method,
+      headers: getForwardHeaders(request),
+      ...(requestBody ? { body: requestBody } : {})
+    });
 
-  const contentType = response.headers.get('content-type') || 'application/json';
-  const body = await response.arrayBuffer();
-  return new NextResponse(body, {
-    status: response.status,
-    headers: { 'content-type': contentType }
-  });
+    const body = await response.arrayBuffer();
+    const proxied = new NextResponse(body, {
+      status: response.status
+    });
+
+    // Preserve key backend headers (including auth/cart cookie updates).
+    const contentType = response.headers.get('content-type');
+    if (contentType) {
+      proxied.headers.set('content-type', contentType);
+    }
+    const setCookie = response.headers.get('set-cookie');
+    if (setCookie) {
+      proxied.headers.set('set-cookie', setCookie);
+    }
+
+    return proxied;
+  } catch (error) {
+    console.error('API proxy error:', error);
+    return NextResponse.json(
+      { message: 'Backend API unavailable or misconfigured' },
+      { status: 502 }
+    );
+  }
 }
 
 export async function GET(request: NextRequest, context: { params: Promise<{ path?: string[] }> }) {

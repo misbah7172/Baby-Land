@@ -330,6 +330,50 @@ async function loadUserByEmail(email: string) {
   });
 }
 
+async function verifyFirebaseIdToken(idToken: string) {
+  const apiKey = process.env.FIREBASE_API_KEY || process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  if (!apiKey) {
+    throw new ApiError(500, 'Firebase API key is not configured on the server');
+  }
+
+  const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ idToken })
+  });
+
+  if (!response.ok) {
+    throw new ApiError(401, 'Invalid Firebase session');
+  }
+
+  const payload = await response.json() as {
+    users?: Array<{
+      localId: string;
+      email?: string;
+      displayName?: string;
+      phoneNumber?: string;
+      emailVerified?: boolean;
+    }>;
+  };
+
+  const firebaseUser = payload.users?.[0];
+  if (!firebaseUser?.email) {
+    throw new ApiError(401, 'Firebase user email is missing');
+  }
+
+  const displayName = (firebaseUser.displayName || firebaseUser.email.split('@')[0] || 'Google User').trim();
+
+  return {
+    uid: firebaseUser.localId,
+    email: firebaseUser.email.toLowerCase(),
+    displayName,
+    phoneNumber: firebaseUser.phoneNumber || null,
+    emailVerified: Boolean(firebaseUser.emailVerified)
+  };
+}
+
 function serializeSessionUser(user: { id: string; name: string; email: string; role: Role; phone: string | null }) {
   return {
     id: user.id,
@@ -555,6 +599,40 @@ async function handleAuth(request: NextRequest, segments: string[]) {
     }
 
     return createSessionResponse(serializeSessionUser(user));
+  }
+
+  if (request.method === 'POST' && action === 'firebase-session') {
+    const body = await readJsonBody<{ idToken?: string }>(request);
+    if (!body.idToken) {
+      throw new ApiError(400, 'Firebase token is required');
+    }
+
+    const firebaseIdentity = await verifyFirebaseIdToken(body.idToken);
+    const generatedPassword = `${crypto.randomUUID()}${crypto.randomUUID()}`;
+
+    const user = await prisma.user.upsert({
+      where: { email: firebaseIdentity.email },
+      update: {
+        name: firebaseIdentity.displayName,
+        phone: firebaseIdentity.phoneNumber
+      },
+      create: {
+        name: firebaseIdentity.displayName,
+        email: firebaseIdentity.email,
+        phone: firebaseIdentity.phoneNumber,
+        passwordHash: await bcrypt.hash(generatedPassword, 12),
+        role: 'CUSTOMER'
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        phone: true
+      }
+    });
+
+    return createSessionResponse(user);
   }
 
   if (request.method === 'POST' && action === 'logout') {
@@ -1466,6 +1544,10 @@ export async function dispatchApiRequest(request: NextRequest, segments: string[
     }
 
     if (error instanceof Prisma.PrismaClientInitializationError || error instanceof Prisma.PrismaClientValidationError) {
+      if (segments[0] === 'cart' && request.method === 'GET') {
+        return json({ cart: { items: [], subtotal: '0.00', itemCount: 0 } });
+      }
+
       if (!process.env.DATABASE_URL) {
         return json({ message: 'DATABASE_URL is missing on the server. Set it in Vercel Environment Variables and redeploy.' }, { status: 503 });
       }

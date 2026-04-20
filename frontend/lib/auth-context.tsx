@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 
-import { getMe, logout as apiLogout } from './api';
+import { getMe, logout as apiLogout, syncFirebaseSession } from './api';
 import type { SessionUser } from './types';
 import { auth, signOutFirebase } from './firebase';
 
@@ -44,9 +44,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, firebaseUser => {
+    const unsubscribe = onAuthStateChanged(auth, async firebaseUser => {
       if (!firebaseUser) {
         return;
+      }
+
+      try {
+        const idToken = await firebaseUser.getIdToken();
+        const result = await syncFirebaseSession({ idToken });
+        setUser(result.user);
+        return;
+      } catch {
+        // Fall back to client-only identity if session sync fails.
       }
 
       setUser(currentUser => {

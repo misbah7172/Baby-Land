@@ -93,6 +93,13 @@ export async function register(payload: { name: string; email: string; password:
   return request<{ user: SessionUser }>('/api/auth/register', { method: 'POST', body: JSON.stringify(payload) });
 }
 
+export async function syncFirebaseSession(payload: { idToken: string }) {
+  return request<{ user: SessionUser }>('/api/auth/firebase-session', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}
+
 export async function logout() {
   return request('/api/auth/logout', { method: 'POST' });
 }

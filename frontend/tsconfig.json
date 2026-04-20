@@ -1,9 +1,10 @@
 {
-  "extends": "../tsconfig.base.json",
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "jsx": "preserve",
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "ignoreDeprecations": "5.0",
     "baseUrl": ".",
     "paths": {
       "@/*": [

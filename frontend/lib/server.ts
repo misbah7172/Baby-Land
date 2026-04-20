@@ -133,7 +133,28 @@ function asNumber(value: unknown, fallback = 0) {
 }
 
 function getCookieDomain() {
-  return process.env.COOKIE_DOMAIN || undefined;
+  const rawDomain = process.env.COOKIE_DOMAIN?.trim();
+  if (!rawDomain) {
+    return undefined;
+  }
+
+  let parsedDomain = rawDomain;
+
+  if (rawDomain.includes('://')) {
+    try {
+      parsedDomain = new URL(rawDomain).hostname;
+    } catch {
+      return undefined;
+    }
+  }
+
+  parsedDomain = parsedDomain.replace(/:\d+$/, '').replace(/\/$/, '');
+
+  if (!parsedDomain || parsedDomain === 'localhost' || parsedDomain.includes('/')) {
+    return undefined;
+  }
+
+  return parsedDomain;
 }
 
 function setCookie(response: NextResponse, name: string, value: string, maxAge?: number) {
@@ -1442,6 +1463,14 @@ export async function dispatchApiRequest(request: NextRequest, segments: string[
   } catch (error) {
     if (error instanceof ApiError) {
       return json({ message: error.message }, { status: error.status });
+    }
+
+    if (error instanceof Prisma.PrismaClientInitializationError || error instanceof Prisma.PrismaClientValidationError) {
+      return json({ message: 'Database is not configured correctly on the server.' }, { status: 503 });
+    }
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return json({ message: 'Database request failed. Please try again.' }, { status: 500 });
     }
 
     console.error(error);

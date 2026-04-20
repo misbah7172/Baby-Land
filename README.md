@@ -6,7 +6,7 @@ Production-ready e-commerce starter for baby clothes, blankets, and accessories.
 
 - Frontend: Next.js App Router, TypeScript, Tailwind CSS
 - Backend: Node.js, Express, TypeScript
-- Database: MySQL (local Docker) and PostgreSQL/Supabase (Vercel)
+- Database: MySQL (local Docker), Supabase PostgreSQL (production)
 - Cache: Redis
 - Authentication: JWT access and refresh tokens in HTTP-only cookies
 - Containers: Docker and Docker Compose
@@ -16,7 +16,8 @@ Production-ready e-commerce starter for baby clothes, blankets, and accessories.
 - `frontend` - Next.js storefront and admin UI
 - `backend` - Express REST API
 - `database` - Prisma schema, seed data, and migrations
-- `docker` - Dockerfiles for the services
+- `frontend/Dockerfile` - Next.js frontend container image
+- `backend/Dockerfile` - Express backend container image
 
 ## Run With Docker
 
@@ -31,7 +32,7 @@ docker-compose up --build
 - Frontend: `http://localhost:3000`
 - API: `http://localhost:4000/health`
 
-Docker uses MySQL through `DATABASE_URL_DOCKER` in `docker-compose.yml`.
+Docker expects the backend `DATABASE_URL_DOCKER` to point at MySQL and `REDIS_URL` to point at Redis.
 
 ## Deploy Frontend To Vercel
 
@@ -39,22 +40,33 @@ Set the Vercel project Root Directory to `frontend`.
 
 Add these environment variables in Vercel:
 
-- `NEXT_PUBLIC_API_URL` (your deployed backend API URL)
-- `NEXT_PUBLIC_SUPABASE_URL=https://tiqforrjgvfnlfvafssj.supabase.co`
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_7n2qaeZPUvi4QX40PJGVIQ_p21Gjxhw`
-- `DATABASE_URL` (Supabase Postgres connection string, if backend is also deployed)
+- `NEXT_PUBLIC_BACKEND_URL` (your deployed backend API URL)
+- `BACKEND_API_URL` (backend URL used by server-side route handlers)
+- `REDIS_URL` (shared cache connection string)
 
-If you deploy backend outside Docker with Supabase Postgres, use Prisma Postgres scripts:
+The backend owns the MySQL `DATABASE_URL`; the frontend only needs the backend and Redis URLs.
+
+If you deploy the backend separately with Supabase PostgreSQL, use the Postgres Prisma scripts:
 
 ```bash
 npm run prisma:generate:postgres -w backend
-npm run prisma:dbpush:postgres -w backend
+npm run prisma:migrate:postgres -w backend
 npm run prisma:seed -w backend
 ```
 
+## Deploy On Render
+
+- Use `render.yaml` as the blueprint.
+- The frontend and backend are both containerized with Docker.
+- Redis is provisioned as a managed Render service for backend cart/session caching.
+- Set backend `DATABASE_URL` to Supabase PostgreSQL in Render environment variables.
+- Keep `PRISMA_PROVIDER=postgres` for Render backend.
+
 ## Database
 
-The backend runs Prisma migrations and seed data on startup in the Docker setup.
+The Docker backend image generates Prisma Client during the build.
+Local Docker backend uses `PRISMA_PROVIDER=mysql` and runs Prisma db push for resilient startup.
+Render backend uses `PRISMA_PROVIDER=postgres` and runs Prisma migrate deploy.
 
 To run them manually:
 

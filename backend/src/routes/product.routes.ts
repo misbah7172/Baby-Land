@@ -101,15 +101,18 @@ productRouter.get('/', async (request, response, next) => {
 
 productRouter.get('/:slug', async (request, response, next) => {
   try {
-    const cacheKey = `products:detail:${request.params.slug}`;
+    const identifier = request.params.slug;
+    const cacheKey = `products:detail:${identifier}`;
     const cached = await getCachedJson<{ product: unknown }>(cacheKey);
     if (cached) {
       response.json(cached);
       return;
     }
 
-    const product = await prisma.product.findUnique({
-      where: { slug: request.params.slug },
+    const product = await prisma.product.findFirst({
+      where: {
+        OR: [{ slug: identifier }, { id: identifier }]
+      },
       include: productInclude
     });
 

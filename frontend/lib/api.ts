@@ -1,9 +1,15 @@
+import { getBackendApiBase } from './backend';
 import { Category, CartPayload, Product, SessionUser } from './types';
 
 const isServerRuntime = !('window' in globalThis);
 
-const serverApiBase = process.env.INTERNAL_API_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
-const apiBase = isServerRuntime ? serverApiBase : '';
+const serverApiBase =
+  process.env.INTERNAL_API_URL ||
+  process.env.APP_BASE_URL ||
+  process.env.RENDER_EXTERNAL_URL ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://127.0.0.1:${process.env.PORT || 3000}`);
+const appApiBase = isServerRuntime ? serverApiBase : '';
+const backendApiBase = getBackendApiBase();
 
 type RequestWithCache = RequestInit & { cache?: 'default' | 'no-store' | 'force-cache' };
 
@@ -14,10 +20,11 @@ function getAdminHeaders() {
   };
 }
 
-async function request<T>(path: string, init?: RequestWithCache): Promise<T> {
+async function request<T>(path: string, init?: RequestWithCache, baseUrl = appApiBase): Promise<T> {
   const { cache, ...fetchInit } = { cache: 'no-store', ...init };
+  const targetUrl = baseUrl ? new URL(path, baseUrl).toString() : path;
   
-  const response = await fetch(`${apiBase}${path}`, {
+  const response = await fetch(targetUrl, {
     ...fetchInit,
     credentials: 'include',
     headers: {
@@ -40,21 +47,21 @@ export async function getProducts(searchParams?: Record<string, string | undefin
   Object.entries(searchParams || {}).forEach(([key, value]) => {
     if (value) query.set(key, value);
   });
-  const result = await request<{ products: Product[]; total: number; page: number; limit: number }>(`/api/products?${query.toString()}`, { cache: 'force-cache' });
+  const result = await request<{ products: Product[]; total: number; page: number; limit: number }>(`/api/products?${query.toString()}`, { cache: 'force-cache' }, appApiBase);
   return result;
 }
 
 export async function getProduct(slug: string) {
-  return request<{ product: Product }>(`/api/products/${slug}`, { cache: 'force-cache' });
+  return request<{ product: Product }>(`/api/products/${slug}`, { cache: 'force-cache' }, appApiBase);
 }
 
 export async function getCategories() {
-  return request<{ categories: Category[] }>('/api/categories', { cache: 'force-cache' });
+  return request<{ categories: Category[] }>('/api/categories', { cache: 'force-cache' }, appApiBase);
 }
 
 export async function getCart() {
   try {
-    return await request<{ cart: CartPayload }>('/api/cart');
+    return await request<{ cart: CartPayload }>('/api/cart', undefined, backendApiBase);
   } catch {
     // Keep the storefront usable when the server cart is temporarily unavailable.
     return {
@@ -71,45 +78,45 @@ export async function addToCart(payload: { productId: string; quantity: number; 
   return request<{ cart: CartPayload }>('/api/cart/items', {
     method: 'POST',
     body: JSON.stringify(payload)
-  });
+  }, backendApiBase);
 }
 
 export async function updateCartItem(itemId: string, quantity: number) {
   return request<{ cart: CartPayload }>(`/api/cart/items/${itemId}`, {
     method: 'PATCH',
     body: JSON.stringify({ quantity })
-  });
+  }, backendApiBase);
 }
 
 export async function removeCartItem(itemId: string) {
-  return request<{ cart: CartPayload }>(`/api/cart/items/${itemId}`, { method: 'DELETE' });
+  return request<{ cart: CartPayload }>(`/api/cart/items/${itemId}`, { method: 'DELETE' }, backendApiBase);
 }
 
 export async function login(payload: { email: string; password: string }) {
-  return request<{ user: SessionUser }>('/api/auth/login', { method: 'POST', body: JSON.stringify(payload) });
+  return request<{ user: SessionUser }>('/api/auth/login', { method: 'POST', body: JSON.stringify(payload) }, backendApiBase);
 }
 
 export async function register(payload: { name: string; email: string; password: string }) {
-  return request<{ user: SessionUser }>('/api/auth/register', { method: 'POST', body: JSON.stringify(payload) });
+  return request<{ user: SessionUser }>('/api/auth/register', { method: 'POST', body: JSON.stringify(payload) }, backendApiBase);
 }
 
 export async function syncFirebaseSession(payload: { idToken: string }) {
   return request<{ user: SessionUser }>('/api/auth/firebase-session', {
     method: 'POST',
     body: JSON.stringify(payload)
-  });
+  }, backendApiBase);
 }
 
 export async function logout() {
-  return request('/api/auth/logout', { method: 'POST' });
+  return request('/api/auth/logout', { method: 'POST' }, backendApiBase);
 }
 
 export async function getMe() {
-  return request<{ user: SessionUser | null }>('/api/auth/me');
+  return request<{ user: SessionUser | null }>('/api/auth/me', undefined, backendApiBase);
 }
 
 export async function checkout(payload: Record<string, string>) {
-  return request('/api/orders', { method: 'POST', body: JSON.stringify(payload) });
+  return request('/api/orders', { method: 'POST', body: JSON.stringify(payload) }, backendApiBase);
 }
 
 export async function getMyOrders() {
@@ -135,19 +142,19 @@ export async function getMyOrders() {
         createdAt: string;
       }>;
     }>;
-  }>('/api/orders/me');
+  }>('/api/orders/me', undefined, backendApiBase);
 }
 
 export async function getReviews(productId: string) {
-  return request<{ reviews: Array<{ id: string; rating: number; comment: string | null; user: { name: string } }> }>(`/api/reviews/product/${productId}`);
+  return request<{ reviews: Array<{ id: string; rating: number; comment: string | null; user: { name: string } }> }>(`/api/reviews/product/${productId}`, undefined, backendApiBase);
 }
 
 export async function getPublicReviews(limit = 3) {
-  return request<{ reviews: Array<{ id: string; rating: number; comment: string | null; user: { name: string }; product: { name: string; slug: string } }> }>(`/api/reviews?limit=${limit}`);
+  return request<{ reviews: Array<{ id: string; rating: number; comment: string | null; user: { name: string }; product: { name: string; slug: string } }> }>(`/api/reviews?limit=${limit}`, undefined, backendApiBase);
 }
 
 export async function addReview(productId: string, payload: { rating: number; comment?: string }) {
-  return request(`/api/reviews/product/${productId}`, { method: 'POST', body: JSON.stringify(payload) });
+  return request(`/api/reviews/product/${productId}`, { method: 'POST', body: JSON.stringify(payload) }, backendApiBase);
 }
 
 export async function getAdminAnalytics() {
@@ -155,15 +162,15 @@ export async function getAdminAnalytics() {
     totalOrders: number;
     totalSales: string;
     topProducts: Array<{ productId: string; productName: string; _sum: { quantity: number | null } }>;
-  }>('/api/admin/analytics', { headers: getAdminHeaders() });
+  }>('/api/admin/analytics', { headers: getAdminHeaders() }, backendApiBase);
 }
 
 export async function getHomepageSettings() {
-  return request<{ settings: Record<string, unknown> }>('/api/settings/homepage');
+  return request<{ settings: Record<string, unknown> }>('/api/settings/homepage', undefined, backendApiBase);
 }
 
 export async function getAdminHomepageSettings() {
-  return request<{ settings: Record<string, unknown> }>('/api/admin/settings/homepage', { headers: getAdminHeaders() });
+  return request<{ settings: Record<string, unknown> }>('/api/admin/settings/homepage', { headers: getAdminHeaders() }, backendApiBase);
 }
 
 export async function updateAdminHomepageSettings(payload: {
@@ -178,7 +185,7 @@ export async function updateAdminHomepageSettings(payload: {
     method: 'PUT',
     headers: getAdminHeaders(),
     body: JSON.stringify(payload)
-  });
+  }, backendApiBase);
 }
 
 export async function getAdminOrders() {
@@ -191,13 +198,13 @@ export async function getAdminOrders() {
       user: { name: string; email: string } | null;
       items: Array<{ id: string; productName: string; quantity: number; price: string }>;
     }>;
-  }>('/api/admin/orders', { headers: getAdminHeaders() });
+  }>('/api/admin/orders', { headers: getAdminHeaders() }, backendApiBase);
 }
 
 export async function getAdminProducts() {
   return request<{
     products: Product[];
-  }>('/api/admin/products', { headers: getAdminHeaders() });
+  }>('/api/admin/products', { headers: getAdminHeaders() }, backendApiBase);
 }
 
 export async function updateAdminOrderStatus(orderId: string, payload: { orderStatus: 'PENDING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED'; note?: string }) {
@@ -205,7 +212,7 @@ export async function updateAdminOrderStatus(orderId: string, payload: { orderSt
     method: 'PATCH',
     headers: getAdminHeaders(),
     body: JSON.stringify(payload)
-  });
+  }, backendApiBase);
 }
 
 export async function getAdminOrderDetail(orderId: string) {
@@ -230,11 +237,11 @@ export async function getAdminOrderDetail(orderId: string) {
         createdAt: string;
       }>;
     };
-  }>(`/api/admin/orders/${orderId}`, { headers: getAdminHeaders() });
+  }>(`/api/admin/orders/${orderId}`, { headers: getAdminHeaders() }, backendApiBase);
 }
 
 export async function getAdminCategories() {
-  return request<{ categories: Category[] }>('/api/admin/categories', { headers: getAdminHeaders() });
+  return request<{ categories: Category[] }>('/api/admin/categories', { headers: getAdminHeaders() }, backendApiBase);
 }
 
 export async function createAdminCategory(payload: { name: string; slug: string }) {
@@ -242,14 +249,14 @@ export async function createAdminCategory(payload: { name: string; slug: string 
     method: 'POST',
     headers: getAdminHeaders(),
     body: JSON.stringify(payload)
-  });
+  }, backendApiBase);
 }
 
 export async function deleteAdminCategory(categoryId: string) {
   return request(`/api/admin/categories/${categoryId}`, {
     method: 'DELETE',
     headers: getAdminHeaders()
-  });
+  }, backendApiBase);
 }
 
 export async function createAdminProduct(payload: {
@@ -270,7 +277,7 @@ export async function createAdminProduct(payload: {
     method: 'POST',
     headers: getAdminHeaders(),
     body: JSON.stringify(payload)
-  });
+  }, backendApiBase);
 }
 
 export async function updateAdminProduct(productId: string, payload: {
@@ -291,21 +298,21 @@ export async function updateAdminProduct(productId: string, payload: {
     method: 'PATCH',
     headers: getAdminHeaders(),
     body: JSON.stringify(payload)
-  });
+  }, backendApiBase);
 }
 
 export async function deleteAdminProduct(productId: string) {
   return request(`/api/admin/products/${productId}`, {
     method: 'DELETE',
     headers: getAdminHeaders()
-  });
+  }, backendApiBase);
 }
 
 export async function uploadAdminImage(file: Blob, filename = 'upload.jpg') {
   const formData = new FormData();
   formData.append('file', file, filename);
 
-  const response = await fetch(`${apiBase}/api/upload/image`, {
+  const response = await fetch(new URL('/api/upload/image', backendApiBase).toString(), {
     method: 'POST',
     credentials: 'include',
     headers: getAdminHeaders(),
@@ -325,7 +332,7 @@ export async function updateAdminCategory(categoryId: string, payload: { name: s
     method: 'PATCH',
     headers: getAdminHeaders(),
     body: JSON.stringify(payload)
-  });
+  }, backendApiBase);
 }
 
 export async function getAdminUsers() {
@@ -338,7 +345,7 @@ export async function getAdminUsers() {
       createdAt: string;
       _count: { orders: number; reviews: number };
     }>;
-  }>('/api/admin/users', { headers: getAdminHeaders() });
+  }>('/api/admin/users', { headers: getAdminHeaders() }, backendApiBase);
 }
 
 export async function updateAdminUserRole(userId: string, role: 'CUSTOMER' | 'ADMIN') {
@@ -346,7 +353,7 @@ export async function updateAdminUserRole(userId: string, role: 'CUSTOMER' | 'AD
     method: 'PATCH',
     headers: getAdminHeaders(),
     body: JSON.stringify({ role })
-  });
+  }, backendApiBase);
 }
 
 export async function getAdminReviews() {
@@ -359,12 +366,12 @@ export async function getAdminReviews() {
       user: { id: string; name: string; email: string };
       product: { id: string; name: string; slug: string };
     }>;
-  }>('/api/admin/reviews', { headers: getAdminHeaders() });
+  }>('/api/admin/reviews', { headers: getAdminHeaders() }, backendApiBase);
 }
 
 export async function deleteAdminReview(reviewId: string) {
   return request(`/api/admin/reviews/${reviewId}`, {
     method: 'DELETE',
     headers: getAdminHeaders()
-  });
+  }, backendApiBase);
 }

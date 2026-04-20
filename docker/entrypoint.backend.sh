@@ -1,16 +1,25 @@
 #!/bin/bash
 set -e
 
-echo "Waiting for MySQL to be ready..."
-while ! nc -z mysql 3306; do
-  sleep 1
-done
+PRISMA_PROVIDER=${PRISMA_PROVIDER:-postgres}
 
-echo "MySQL is ready!"
+if [ "$PRISMA_PROVIDER" = "mysql" ]; then
+  echo "Waiting for MySQL to be ready..."
+  while ! nc -z mysql 3306; do
+    sleep 1
+  done
+  echo "MySQL is ready!"
+fi
 
-# Try to run migrations, but don't fail if they don't work yet
-echo "Attempting to run Prisma migrations..."
-npm run prisma:migrate -w backend || echo "Migrations failed, continuing anyway..."
+# For local Docker MySQL we use db push to keep startup resilient even when migrations are not tracked.
+# For production-style Postgres deployments we run migrate deploy.
+if [ "$PRISMA_PROVIDER" = "mysql" ]; then
+  echo "Applying MySQL schema with Prisma db push..."
+  npm run prisma:dbpush:mysql -w backend || echo "MySQL db push failed, continuing anyway..."
+else
+  echo "Applying Postgres migrations..."
+  npm run prisma:migrate:postgres -w backend || echo "Postgres migrations failed, continuing anyway..."
+fi
 
 echo "Running seed..."
 npm run prisma:seed -w backend || echo "Seed failed, continuing anyway..."

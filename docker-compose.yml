@@ -4,17 +4,17 @@ services:
     container_name: baby-land-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-baby_land_root_password}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-baby_land}
+      MYSQL_USER: ${MYSQL_USER:-baby_land}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-baby_land_password}
     ports:
       - '3306:3306'
     volumes:
       - mysql_data:/var/lib/mysql
       - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pbaby_land_root_password"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -25,65 +25,60 @@ services:
     restart: unless-stopped
     ports:
       - '6379:6379'
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
-  backend:
-    build:
-      context: .
-      dockerfile: docker/backend.Dockerfile
-    container_name: baby-land-backend
-    restart: unless-stopped
-    env_file:
-      - .env
-    environment:
-      DATABASE_URL: ${DATABASE_URL_DOCKER}
-      REDIS_URL: ${REDIS_URL}
-      FRONTEND_URL: ${FRONTEND_URL}
-      BACKEND_URL: ${BACKEND_URL}
-      CORS_ORIGIN: ${CORS_ORIGIN}
-      COOKIE_DOMAIN: ${COOKIE_DOMAIN}
-      COOKIE_SECURE: ${COOKIE_SECURE}
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      ADMIN_EMAIL: ${ADMIN_EMAIL}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-      PORT: 4000
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    ports:
-      - '4000:4000'
 
   frontend:
     build:
       context: .
-      dockerfile: docker/frontend.Dockerfile
-      args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
-        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}
-        NEXT_PUBLIC_ADMIN_PATH: ${NEXT_PUBLIC_ADMIN_PATH}
-        NEXT_PUBLIC_ADMIN_EMAIL: ${NEXT_PUBLIC_ADMIN_EMAIL}
-        NEXT_PUBLIC_ADMIN_PASSWORD_HASH: ${NEXT_PUBLIC_ADMIN_PASSWORD_HASH}
+      dockerfile: frontend/Dockerfile
     container_name: baby-land-frontend
     restart: unless-stopped
     env_file:
       - .env
     environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}
-      INTERNAL_API_URL: http://backend:4000
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL:-http://localhost:4000}
+      BACKEND_API_URL: http://backend:4000
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-localhost}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
     depends_on:
+      - redis
       - backend
     ports:
       - '3000:3000'
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      args:
+        PRISMA_PROVIDER: mysql
+    container_name: baby-land-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      BACKEND_URL: ${BACKEND_URL:-http://localhost:4000}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      DATABASE_URL: ${DATABASE_URL_DOCKER:-mysql://baby_land:baby_land_password@mysql:3306/baby_land}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-localhost}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-me-access-secret-change-me}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-refresh-secret-change-me}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@babyland.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin12345!}
+      PRISMA_PROVIDER: mysql
+    depends_on:
+      - mysql
+      - redis
+    ports:
+      - '4000:4000'
 
 volumes:
   mysql_data:

@@ -8,7 +8,7 @@ const envSchema = z.object({
   BACKEND_URL: z.string().url().default('http://localhost:4000'),
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
   DATABASE_URL: z.string().min(1),
-  REDIS_URL: z.string().min(1).default('redis://localhost:6379'),
+  REDIS_URL: z.string().optional().default(''),
   JWT_ACCESS_SECRET: z.string().min(20),
   JWT_REFRESH_SECRET: z.string().min(20),
   COOKIE_DOMAIN: z.string().default('localhost'),

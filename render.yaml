@@ -1,15 +1,10 @@
 services:
-  - type: redis
-    name: baby-land-redis
-    plan: starter
-    ipAllowList: []
-
   - type: web
     name: baby-land-frontend
     env: docker
     rootDir: .
     dockerfilePath: frontend/Dockerfile
-    plan: starter
+    plan: free
     healthCheckPath: /
     envVars:
       - key: NODE_ENV
@@ -22,11 +17,6 @@ services:
         sync: false
       - key: BACKEND_API_URL
         sync: false
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: baby-land-redis
-          property: connectionString
       - key: COOKIE_DOMAIN
         sync: false
       - key: NEXT_PUBLIC_ADMIN_EMAIL
@@ -57,7 +47,7 @@ services:
     env: docker
     rootDir: .
     dockerfilePath: backend/Dockerfile
-    plan: starter
+    plan: free
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
@@ -74,11 +64,6 @@ services:
         sync: false
       - key: PRISMA_PROVIDER
         value: postgres
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: baby-land-redis
-          property: connectionString
       - key: JWT_ACCESS_SECRET
         sync: false
       - key: JWT_REFRESH_SECRET

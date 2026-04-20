@@ -1,7 +1,8 @@
 import Link from 'next/link';
 
 import { Product } from '@/lib/types';
-import { Card, Price, ProductImageTile } from './ui';
+import { Card, Price } from './ui';
+import { ProductImageTile } from './product-image-tile';
 import { ProductQuickAdd } from './product-quick-add';
 
 export function ProductCard({ product }: { product: Product }) {

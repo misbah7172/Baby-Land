@@ -65,11 +65,17 @@ export default async function HomePage() {
     }
   }
 
-  const heroBadge = typeof settings.heroBadge === 'string' ? settings.heroBadge : text.home.badge;
-  const heroTitle = typeof settings.heroTitle === 'string' ? settings.heroTitle : text.home.title;
-  const heroSubtitle = typeof settings.heroSubtitle === 'string' ? settings.heroSubtitle : text.home.subtitle;
-  const primaryCtaLabel = typeof settings.primaryCtaLabel === 'string' ? settings.primaryCtaLabel : text.home.primaryCta;
-  const secondaryCtaLabel = typeof settings.secondaryCtaLabel === 'string' ? settings.secondaryCtaLabel : text.home.secondaryCta;
+  const heroBadgeSetting = typeof settings.heroBadge === 'string' ? settings.heroBadge : '';
+  const heroTitleSetting = typeof settings.heroTitle === 'string' ? settings.heroTitle : '';
+  const heroSubtitleSetting = typeof settings.heroSubtitle === 'string' ? settings.heroSubtitle : '';
+  const primaryCtaLabelSetting = typeof settings.primaryCtaLabel === 'string' ? settings.primaryCtaLabel : '';
+  const secondaryCtaLabelSetting = typeof settings.secondaryCtaLabel === 'string' ? settings.secondaryCtaLabel : '';
+
+  const heroBadge = language === 'bn' ? text.home.badge : heroBadgeSetting || text.home.badge;
+  const heroTitle = language === 'bn' ? text.home.title : heroTitleSetting || text.home.title;
+  const heroSubtitle = language === 'bn' ? text.home.subtitle : heroSubtitleSetting || text.home.subtitle;
+  const primaryCtaLabel = language === 'bn' ? text.home.primaryCta : primaryCtaLabelSetting || text.home.primaryCta;
+  const secondaryCtaLabel = language === 'bn' ? text.home.secondaryCta : secondaryCtaLabelSetting || text.home.secondaryCta;
   const heroImageUrl = typeof settings.heroImageUrl === 'string' ? normalizeImageUrl(settings.heroImageUrl) : '';
 
   return (

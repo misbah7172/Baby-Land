@@ -24,6 +24,7 @@ export function createApp() {
   app.use(helmet({
     contentSecurityPolicy: process.env.NODE_ENV === 'production',
     crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
     hsts: {
       maxAge: 31536000, // 1 year
       includeSubDomains: true,

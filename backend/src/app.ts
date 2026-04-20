@@ -51,9 +51,6 @@ export function createApp() {
     legacyHeaders: false,
     skip: (req) => {
       return req.path === '/health';
-    },
-    keyGenerator: (req) => {
-      return req.ip || req.socket.remoteAddress || 'unknown';
     }
   });
 

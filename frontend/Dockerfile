@@ -30,8 +30,7 @@ COPY frontend/lib frontend/lib
 COPY frontend/pages frontend/pages
 COPY frontend/public frontend/public
 COPY frontend/prisma frontend/prisma
-COPY frontend/next.config.ts frontend/tsconfig.json frontend/middleware.ts frontend/
-COPY frontend/tailwind.config.ts frontend/postcss.config.mjs frontend/
+COPY frontend/next.config.ts frontend/tsconfig.json frontend/middleware.ts frontend/tailwind.config.ts frontend/postcss.config.mjs frontend/
 
 # Build frontend
 RUN npm run build -w frontend

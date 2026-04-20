@@ -27,7 +27,6 @@ RUN npm ci --prefer-offline --no-audit
 # Copy source code
 COPY backend/src backend/src
 COPY backend/tsconfig.json backend/
-COPY database/prisma database/prisma
 
 # Generate Prisma client and build backend
 RUN npm run prisma:generate -w backend && npm run build -w backend

@@ -2,10 +2,8 @@ import { Category, CartPayload, Product, SessionUser } from './types';
 
 const isServerRuntime = !('window' in globalThis);
 
-const apiBase =
-  isServerRuntime
-    ? process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
-    : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const serverApiBase = process.env.INTERNAL_API_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+const apiBase = isServerRuntime ? serverApiBase : '';
 
 type RequestWithCache = RequestInit & { cache?: 'default' | 'no-store' | 'force-cache' };
 

@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await apiLogout();
     } catch {
-      // Ignore backend logout errors for Firebase-only sessions.
+      // Ignore API logout errors for Firebase-only sessions.
     }
     await signOutFirebase();
     setUser(null);

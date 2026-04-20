@@ -40,7 +40,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="mx-auto min-h-[calc(100vh-200px)] max-w-4xl bg-[#FFF8F0] px-4 py-10 md:px-8 md:py-16">
-      <SectionTitle eyebrow={text.cart.checkout} title={language === 'bn' ? 'শিপিং ও পেমেন্ট' : 'Shipping and payment'} description={language === 'bn' ? 'ক্যাশ অন ডেলিভারি ডিফল্টভাবে সক্রিয়।' : 'Cash on delivery is enabled by default. Mobile payment mocks can be added through the backend API.'} />
+      <SectionTitle eyebrow={text.cart.checkout} title={language === 'bn' ? 'শিপিং ও পেমেন্ট' : 'Shipping and payment'} description={language === 'bn' ? 'ক্যাশ অন ডেলিভারি ডিফল্টভাবে সক্রিয়।' : 'Cash on delivery is enabled by default. Mobile payment mocks can be added through the app API.'} />
       <Card className="mt-8 bg-white">
         <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
           <input name="shippingName" placeholder={language === 'bn' ? 'পূর্ণ নাম' : 'Full name'} className="rounded-2xl border border-[#FADADD] bg-white px-4 py-3 outline-none transition focus:border-[#FFB6A3] focus:ring-2 focus:ring-[#FFB6A3] focus:ring-opacity-10" required />

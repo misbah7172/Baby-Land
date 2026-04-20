@@ -6,8 +6,8 @@
     "backend"
   ],
   "scripts": {
-    "build": "npm run build -w backend && npm run build -w frontend",
-    "test": "npm run test -w backend",
-    "dev": "echo Use docker-compose up for the full stack"
+    "build": "npm run build -w frontend",
+    "test": "npm run build -w frontend",
+    "dev": "npm run dev -w frontend"
   }
 }

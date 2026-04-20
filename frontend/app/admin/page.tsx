@@ -18,7 +18,7 @@ export default function AdminPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 md:px-8 md:py-16">
-      <SectionTitle eyebrow="Admin" title="Dashboard" description="Manage products, categories, orders, and analytics from the backend API." />
+      <SectionTitle eyebrow="Admin" title="Dashboard" description="Manage products, categories, orders, and analytics from the app API." />
       <div className="mt-8 grid gap-6 md:grid-cols-3">
         <Card><p className="text-sm text-stone-500">Total orders</p><p className="mt-2 text-3xl font-semibold text-rosewood">{analytics?.totalOrders || 0}</p></Card>
         <Card><p className="text-sm text-stone-500">Total sales</p><p className="mt-2 text-3xl font-semibold text-rosewood">৳{analytics?.totalSales || '0.00'}</p></Card>

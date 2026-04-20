@@ -70,7 +70,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </Card>
           <Card className="border border-[#FADADD] bg-white">
             <h2 className="font-display text-2xl text-[#333333]">{text.product.quickNote}</h2>
-            <p className="mt-3 text-sm leading-7 text-[#777777]">{language === 'bn' ? 'রিভিউ, কার্ট, লগইন এবং চেকআউট সবই কুকি-ভিত্তিক অথ দিয়ে ব্যাকএন্ড API-এর মাধ্যমে পরিচালিত হয়।' : 'Reviews, cart actions, login, and checkout are handled through the backend API with cookie-based auth.'}</p>
+            <p className="mt-3 text-sm leading-7 text-[#777777]">{language === 'bn' ? 'রিভিউ, কার্ট, লগইন এবং চেকআউট সবই কুকি-ভিত্তিক অথ দিয়ে অ্যাপ API-এর মাধ্যমে পরিচালিত হয়।' : 'Reviews, cart actions, login, and checkout are handled through the app API with cookie-based auth.'}</p>
           </Card>
         </section>
       </div>

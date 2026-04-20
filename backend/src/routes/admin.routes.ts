@@ -65,7 +65,15 @@ const productSchema = z.object({
     sku: z.string().min(2),
     material: z.string().min(2),
     featured: z.boolean().default(false),
-    imageUrls: z.array(z.string().url()).default([]),
+    imageUrls: z.array(
+      z.string().min(1).refine(
+        (value) =>
+          value.startsWith('http://') ||
+          value.startsWith('https://') ||
+          value.startsWith('/api/product-images/'),
+        'Invalid image URL format'
+      )
+    ).default([]),
     sizes: z.array(z.nativeEnum(SizeOption)).default([])
   })
 });
@@ -90,7 +98,17 @@ const homepageSettingsSchema = z.object({
     heroSubtitle: z.string().min(2),
     primaryCtaLabel: z.string().min(2),
     secondaryCtaLabel: z.string().min(2),
-    heroImageUrl: z.string().url().or(z.literal('')).default('')
+    heroImageUrl: z
+      .string()
+      .refine(
+        (value) =>
+          value === '' ||
+          value.startsWith('http://') ||
+          value.startsWith('https://') ||
+          value.startsWith('/api/product-images/'),
+        'Invalid hero image URL format'
+      )
+      .default('')
   })
 });
 

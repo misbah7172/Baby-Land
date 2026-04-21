@@ -15,7 +15,7 @@ html {
 
 body {
   margin: 0;
-  background: #fffdfb;
+  background: radial-gradient(circle at 12% -10%, #ffe4df 0%, transparent 28%), radial-gradient(circle at 88% -16%, #ddf1ff 0%, transparent 30%), #fffdfb;
   color: #463531;
   font-family: var(--font-body), sans-serif;
 }
@@ -36,4 +36,9 @@ a {
 .glass-card {
   backdrop-filter: blur(18px);
   background: rgba(255, 255, 255, 0.72);
+}
+
+::selection {
+  background: #ffd7ce;
+  color: #4a2f2a;
 }

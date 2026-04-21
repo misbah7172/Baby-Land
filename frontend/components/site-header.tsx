@@ -46,11 +46,10 @@ export function SiteHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-white/60 bg-white/75 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-8">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="text-2xl font-bold text-rosewood">🍼</span>
-          <span className="font-display text-lg text-rosewood sm:text-2xl">{text.brand}</span>
+      <header className="sticky top-0 z-40 border-b border-[#f5ddd8] bg-white/88 backdrop-blur-xl">
+      <div className="relative mx-auto flex max-w-7xl items-center justify-center px-4 py-4 md:justify-between md:px-8">
+        <Link href="/" className="text-center">
+          <span className="font-display text-2xl text-rosewood">{text.brand}</span>
         </Link>
 
         <nav className="hidden items-center gap-6 text-sm text-stone-600 md:flex">

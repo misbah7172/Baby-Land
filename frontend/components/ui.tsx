@@ -4,8 +4,8 @@ import Image from 'next/image';
 
 export function Button({ className, href, children, type = 'button', onClick, ...props }: any) {
   const classes = clsx(
-    'inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-medium transition',
-    'bg-rosewood text-white shadow-soft hover:translate-y-[-1px] hover:bg-[#58342f]',
+    'inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition',
+    'bg-[#f5a893] text-white shadow-soft hover:translate-y-[-1px] hover:bg-[#e8927d]',
     className
   );
 
@@ -25,7 +25,7 @@ export function Button({ className, href, children, type = 'button', onClick, ..
 }
 
 export function Card({ className, children }: any) {
-  return <div className={clsx('rounded-[28px] border border-white/70 bg-white/80 p-6 shadow-soft', className)}>{children}</div>;
+  return <div className={clsx('rounded-[30px] border border-[#f7ddd7] bg-white/90 p-6 shadow-soft', className)}>{children}</div>;
 }
 
 export function SectionTitle({ eyebrow, title, description }: { eyebrow?: string; title: string; description?: string }) {

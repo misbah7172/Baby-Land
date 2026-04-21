@@ -86,10 +86,10 @@ export default async function HomePage() {
         <div className="grid gap-12 md:grid-cols-2 items-center">
           <div className="space-y-8">
             <div>
-              <span className="inline-block bg-[#FADADD] text-[#333333] px-4 py-2 rounded-2xl text-sm font-semibold mb-4">
+              <span className="mb-4 inline-block rounded-full border border-[#f5cdc5] bg-[#fdebe7] px-5 py-2 text-sm font-semibold text-[#6b3f3a]">
                 {heroBadge}
               </span>
-              <h1 className="text-5xl md:text-6xl font-bold text-[#333333] leading-tight">
+              <h1 className="font-display text-5xl md:text-6xl font-bold text-[#5d3a34] leading-tight">
                 {heroTitle}
               </h1>
             </div>
@@ -101,20 +101,20 @@ export default async function HomePage() {
             <div className="flex flex-wrap gap-4 pt-4">
               <Link
                 href="/products"
-                className="bg-[#FFB6A3] text-white px-8 py-3 rounded-2xl font-semibold hover:opacity-90 transition shadow-sm"
+                className="rounded-2xl bg-[#f5a893] px-8 py-3 font-semibold text-white shadow-soft transition hover:opacity-90"
               >
                 {primaryCtaLabel}
               </Link>
               <Link
                 href="/products"
-                className="border-2 border-[#D6EAF8] text-[#333333] px-8 py-3 rounded-2xl font-semibold hover:bg-[#D6EAF8] transition"
+                className="rounded-2xl border-2 border-[#cfe5f6] px-8 py-3 font-semibold text-[#333333] transition hover:bg-[#ecf6ff]"
               >
                 {secondaryCtaLabel}
               </Link>
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-[#D6EAF8] to-[#D5F5E3] rounded-3xl h-96 md:h-[500px] overflow-hidden">
+          <div className="h-96 overflow-hidden rounded-[36px] border border-[#f5ddd8] bg-gradient-to-br from-[#dff0ff] to-[#e7f8ef] shadow-soft md:h-[500px]">
             {heroImageUrl ? (
               <div className="relative h-full w-full">
                 <SafeImage
@@ -137,17 +137,17 @@ export default async function HomePage() {
       </section>
 
       {/* Categories Section */}
-      <section className="bg-white">
+      <section className="bg-white/70 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-4 py-16 md:px-8">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#333333] mb-12">{text.home.categoriesTitle}</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <h2 className="mb-12 font-display text-3xl md:text-4xl font-bold text-[#5d3a34]">{text.home.categoriesTitle}</h2>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
             {categories.map((category) => (
               <Link
                 key={category.id}
                 href={`/products?category=${category.slug}`}
-                className="p-6 rounded-2xl bg-[#FFF8F0] border border-[#FADADD] hover:shadow-md transition text-center group"
+                className="group rounded-[26px] border border-[#f8d8d1] bg-gradient-to-b from-[#fff9f3] to-[#fff2ef] p-6 text-center shadow-[0_18px_34px_-26px_rgba(153,94,84,0.7)] transition hover:-translate-y-0.5"
               >
-                <div className="text-4xl mb-3 group-hover:scale-110 transition">📦</div>
+                <div className="mb-3 text-4xl transition group-hover:scale-110">📦</div>
                 <h3 className="font-semibold text-[#333333]">{category.name}</h3>
                 <p className="text-sm text-[#777777] mt-2">{category._count?.products ?? 0} {text.home.productsCountSuffix}</p>
               </Link>
@@ -160,7 +160,7 @@ export default async function HomePage() {
       <section className="mx-auto max-w-7xl px-4 py-16 md:px-8">
         <div className="mb-12">
           <span className="text-sm font-semibold text-[#FFB6A3] tracking-wide">{text.home.featuredEyebrow}</span>
-          <h2 className="text-3xl md:text-4xl font-bold text-[#333333] mt-2">{text.home.featuredTitle}</h2>
+          <h2 className="mt-2 font-display text-3xl md:text-4xl font-bold text-[#5d3a34]">{text.home.featuredTitle}</h2>
           <p className="text-[#777777] mt-3 max-w-2xl">
             {text.home.featuredDescription}
           </p>

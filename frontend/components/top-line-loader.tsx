@@ -62,14 +62,16 @@ export function TopLineLoader() {
         return;
       }
 
-      if (clickable instanceof HTMLButtonElement && clickable.disabled) {
+      const tagName = String(clickable.tagName || '').toUpperCase();
+
+      if (tagName === 'BUTTON' && Boolean(clickable.disabled)) {
         return;
       }
 
       start();
 
-      if (clickable instanceof HTMLAnchorElement) {
-        const href = clickable.getAttribute('href') || '';
+      if (tagName === 'A') {
+        const href = String(clickable.getAttribute?.('href') || '');
         if (href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) {
           globalThis.setTimeout(finish, 260);
         }
@@ -80,15 +82,16 @@ export function TopLineLoader() {
       start();
     };
 
-    if (typeof document !== 'undefined') {
-      document.addEventListener('click', onClickCapture, true);
-      document.addEventListener('submit', onSubmitCapture, true);
+    const doc = (globalThis as any).document;
+    if (doc) {
+      doc.addEventListener('click', onClickCapture, true);
+      doc.addEventListener('submit', onSubmitCapture, true);
     }
 
     return () => {
-      if (typeof document !== 'undefined') {
-        document.removeEventListener('click', onClickCapture, true);
-        document.removeEventListener('submit', onSubmitCapture, true);
+      if (doc) {
+        doc.removeEventListener('click', onClickCapture, true);
+        doc.removeEventListener('submit', onSubmitCapture, true);
       }
       clearTimers();
     };

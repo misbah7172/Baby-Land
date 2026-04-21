@@ -39,7 +39,7 @@ export function SiteFooter() {
           <div>
             <h3 className="mb-4 font-semibold text-[#FFB6A3]">{text.footer.supportTitle}</h3>
             <ul className="space-y-2 text-sm">
-              <li><a href="#" className="text-gray-300 transition hover:text-[#FFB6A3]">{text.footer.supportContact}</a></li>
+              <li><Link href="/contact" className="text-gray-300 transition hover:text-[#FFB6A3]">{text.footer.supportContact}</Link></li>
               <li><a href="#" className="text-gray-300 transition hover:text-[#FFB6A3]">{text.footer.supportFaq}</a></li>
               <li><a href="#" className="text-gray-300 transition hover:text-[#FFB6A3]">{text.footer.supportPrivacy}</a></li>
             </ul>

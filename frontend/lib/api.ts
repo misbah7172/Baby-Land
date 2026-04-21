@@ -47,16 +47,16 @@ export async function getProducts(searchParams?: Record<string, string | undefin
   Object.entries(searchParams || {}).forEach(([key, value]) => {
     if (value) query.set(key, value);
   });
-  const result = await request<{ products: Product[]; total: number; page: number; limit: number }>(`/api/products?${query.toString()}`, { cache: 'force-cache' }, appApiBase);
+  const result = await request<{ products: Product[]; total: number; page: number; limit: number }>(`/api/products?${query.toString()}`, { cache: 'no-store' }, appApiBase);
   return result;
 }
 
 export async function getProduct(slug: string) {
-  return request<{ product: Product }>(`/api/products/${slug}`, { cache: 'force-cache' }, appApiBase);
+  return request<{ product: Product }>(`/api/products/${slug}`, { cache: 'no-store' }, appApiBase);
 }
 
 export async function getCategories() {
-  return request<{ categories: Category[] }>('/api/categories', { cache: 'force-cache' }, appApiBase);
+  return request<{ categories: Category[] }>('/api/categories', { cache: 'no-store' }, appApiBase);
 }
 
 export async function getCart() {
@@ -116,7 +116,29 @@ export async function getMe() {
 }
 
 export async function checkout(payload: Record<string, string>) {
-  return request('/api/orders', { method: 'POST', body: JSON.stringify(payload) }, backendApiBase);
+  return request<{
+    order: {
+      id: string;
+      totalPrice: string;
+      orderStatus: 'PENDING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+      createdAt: string;
+      shippingName: string;
+      shippingPhone: string;
+      shippingLine1: string;
+      shippingLine2: string | null;
+      shippingCity: string;
+      shippingState: string | null;
+      shippingPostalCode: string;
+      shippingCountry: string;
+      items: Array<{
+        id: string;
+        productName: string;
+        quantity: number;
+        price: string;
+        size: string;
+      }>;
+    };
+  }>('/api/orders', { method: 'POST', body: JSON.stringify(payload) }, backendApiBase);
 }
 
 export async function getMyOrders() {

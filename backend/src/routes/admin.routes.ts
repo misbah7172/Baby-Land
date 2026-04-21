@@ -282,10 +282,12 @@ adminRouter.post('/products', validate(productSchema), async (request, response,
         featured: body.featured,
         images: { create: body.imageUrls.map((url, index) => ({ url: normalizePublicUrl(url), sortOrder: index })) },
         sizes: { create: body.sizes.map(size => ({ size })) }
-      }
+      },
+      include: { images: true, sizes: true, category: true }
     });
 
     await deleteByPattern('products:*');
+    await deleteByPattern('categories:*');
     response.status(201).json({ product });
   } catch (error) {
     next(error);
@@ -302,7 +304,7 @@ adminRouter.patch('/products/:id', validate(productSchema), async (request, resp
 
     const productId = request.params.id as string;
 
-    const product = await prisma.product.update({
+    await prisma.product.update({
       where: { id: productId },
       data: {
         name: body.name,
@@ -327,7 +329,13 @@ adminRouter.patch('/products/:id', validate(productSchema), async (request, resp
       data: body.sizes.map(size => ({ productId, size }))
     });
 
+    const product = await prisma.product.findUniqueOrThrow({
+      where: { id: productId },
+      include: { images: true, sizes: true, category: true }
+    });
+
     await deleteByPattern('products:*');
+    await deleteByPattern('categories:*');
     response.json({ product });
   } catch (error) {
     next(error);
@@ -338,6 +346,7 @@ adminRouter.delete('/products/:id', async (request, response, next) => {
   try {
     await prisma.product.delete({ where: { id: request.params.id as string } });
     await deleteByPattern('products:*');
+    await deleteByPattern('categories:*');
     response.json({ ok: true });
   } catch (error) {
     next(error);

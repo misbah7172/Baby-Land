@@ -10,6 +10,56 @@ import { getCopy } from '@/lib/i18n';
 import { getMyOrders } from '@/lib/api';
 import { Button, Card, SectionTitle } from '@/components/ui';
 
+function openReceipt(order: any, customer: { name?: string | null; email?: string | null }) {
+  const receiptNo = `BL-${String(order.id).slice(-8).toUpperCase()}`;
+  const rows = (order.items || [])
+    .map((item: any, index: number) => {
+      const amount = (Number(item.price) * item.quantity).toFixed(2);
+      return `<tr><td style="padding:6px 0;">${index + 1}. ${item.productName}</td><td style="padding:6px 0; text-align:center;">${item.quantity}</td><td style="padding:6px 0; text-align:right;">Tk ${amount}</td></tr>`;
+    })
+    .join('');
+
+  const html = `<!doctype html>
+<html>
+  <head><meta charset="utf-8" /><title>Receipt ${receiptNo}</title></head>
+  <body style="font-family: Arial, sans-serif; max-width: 560px; margin: 20px auto; color: #222;">
+    <h2 style="margin:0 0 8px;">Baby Land Receipt</h2>
+    <p style="margin:0 0 4px;">Receipt: ${receiptNo}</p>
+    <p style="margin:0 0 4px;">Order: ${order.id}</p>
+    <p style="margin:0 0 8px;">Date: ${new Date(order.createdAt).toLocaleString()}</p>
+    <p style="margin:0 0 4px;">Customer: ${customer.name || 'N/A'}</p>
+    <p style="margin:0 0 12px;">Email: ${customer.email || 'N/A'}</p>
+    <table style="width:100%; border-collapse: collapse; font-size: 14px;">
+      <thead>
+        <tr>
+          <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px 0;">Item</th>
+          <th style="text-align:center; border-bottom:1px solid #ddd; padding:6px 0;">Qty</th>
+          <th style="text-align:right; border-bottom:1px solid #ddd; padding:6px 0;">Total</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <hr style="margin:12px 0;" />
+    <p style="margin:0; text-align:right; font-weight:700;">Grand Total: Tk ${Number(order.totalPrice || 0).toFixed(2)}</p>
+  </body>
+</html>`;
+
+  const browserWindow = (globalThis as { window?: { open: (url?: string, target?: string, features?: string) => any } }).window;
+  if (!browserWindow) {
+    return;
+  }
+
+  const receiptWindow = browserWindow.open('', '_blank', 'width=700,height=900');
+  if (!receiptWindow) {
+    return;
+  }
+
+  receiptWindow.document.open();
+  receiptWindow.document.write(html);
+  receiptWindow.document.close();
+  receiptWindow.focus();
+}
+
 export default function ProfilePage() {
   const router = useRouter();
   const { user, loading, logout } = useAuth();
@@ -94,6 +144,13 @@ export default function ProfilePage() {
                   </div>
                   <p className="text-sm text-[#777777]">{text.cart.subtotal}: <span className="font-semibold text-[#333333]">৳{order.totalPrice || '0.00'}</span></p>
                   <p className="text-xs text-[#777777] mt-1">{new Date(order.createdAt).toLocaleDateString()}</p>
+                  <button
+                    type="button"
+                    onClick={() => openReceipt(order, { name: user?.name, email: user?.email })}
+                    className="mt-3 rounded-lg bg-[#D6EAF8] px-3 py-1 text-xs font-semibold text-[#2f5f9e] hover:opacity-90"
+                  >
+                    {language === 'bn' ? 'রসিদ ডাউনলোড' : 'Download receipt'}
+                  </button>
                 </div>
               ))
             ) : (

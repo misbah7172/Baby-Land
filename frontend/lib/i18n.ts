@@ -47,7 +47,7 @@ export const translations = {
     },
     cart: {
       title: 'Your shopping bag',
-      description: 'Guest carts live in Redis and logged-in carts persist in MySQL.',
+      description: 'Review your selected items and proceed to checkout securely.',
       summary: 'Summary',
       items: 'Items',
       subtotal: 'Subtotal',
@@ -95,8 +95,7 @@ export const translations = {
     },
     product: {
       reviews: 'Reviews',
-      noReviews: 'No reviews yet.',
-      quickNote: 'Quick note'
+      noReviews: 'No reviews yet.'
     },
     reviewPrompt: {
       title: 'How was your order?',
@@ -174,7 +173,7 @@ export const translations = {
     },
     cart: {
       title: 'আপনার কার্ট',
-      description: 'গেস্ট কার্ট Redis-এ থাকে এবং লগইন করা কার্ট MySQL-এ সংরক্ষণ হয়।',
+      description: 'নিরাপদে চেকআউটের আগে আপনার নির্বাচিত পণ্যগুলো দেখে নিন।',
       summary: 'সারসংক্ষেপ',
       items: 'আইটেম',
       subtotal: 'উপমোট',
@@ -222,8 +221,7 @@ export const translations = {
     },
     product: {
       reviews: 'রিভিউ',
-      noReviews: 'এখনো কোনো রিভিউ নেই।',
-      quickNote: 'ছোট্ট নোট'
+      noReviews: 'এখনো কোনো রিভিউ নেই।'
     },
     reviewPrompt: {
       title: 'আপনার অর্ডার কেমন ছিল?',

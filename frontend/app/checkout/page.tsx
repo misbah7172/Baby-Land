@@ -10,12 +10,90 @@ import { useLanguage } from '@/lib/language-context';
 import { getCopy } from '@/lib/i18n';
 import { Button, Card, SectionTitle } from '@/components/ui';
 
+type CheckoutOrder = {
+  id: string;
+  totalPrice: string;
+  orderStatus: 'PENDING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+  createdAt: string;
+  shippingName: string;
+  shippingPhone: string;
+  shippingLine1: string;
+  shippingLine2: string | null;
+  shippingCity: string;
+  shippingState: string | null;
+  shippingPostalCode: string;
+  shippingCountry: string;
+  items: Array<{
+    id: string;
+    productName: string;
+    quantity: number;
+    price: string;
+    size: string;
+  }>;
+};
+
+function openReceipt(order: CheckoutOrder) {
+  const receiptNo = `BL-${order.id.slice(-8).toUpperCase()}`;
+  const lines = order.items
+    .map((item, index) => {
+      const lineTotal = (Number(item.price) * item.quantity).toFixed(2);
+      return `<tr><td style="padding:6px 0;">${index + 1}. ${item.productName}</td><td style="padding:6px 0; text-align:center;">${item.quantity}</td><td style="padding:6px 0; text-align:right;">Tk ${lineTotal}</td></tr>`;
+    })
+    .join('');
+
+  const html = `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Receipt ${receiptNo}</title>
+  </head>
+  <body style="font-family: Arial, sans-serif; max-width: 560px; margin: 20px auto; color: #222;">
+    <h2 style="margin:0 0 8px;">Baby Land Receipt</h2>
+    <p style="margin:0 0 4px;">Receipt: ${receiptNo}</p>
+    <p style="margin:0 0 4px;">Order: ${order.id}</p>
+    <p style="margin:0 0 4px;">Date: ${new Date(order.createdAt).toLocaleString()}</p>
+    <hr style="margin:12px 0;" />
+    <p style="margin:0 0 4px;">Customer: ${order.shippingName}</p>
+    <p style="margin:0 0 8px;">Phone: ${order.shippingPhone}</p>
+    <p style="margin:0 0 12px;">Address: ${order.shippingLine1}${order.shippingLine2 ? `, ${order.shippingLine2}` : ''}, ${order.shippingCity}${order.shippingState ? `, ${order.shippingState}` : ''}, ${order.shippingPostalCode}, ${order.shippingCountry}</p>
+    <table style="width:100%; border-collapse: collapse; font-size: 14px;">
+      <thead>
+        <tr>
+          <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px 0;">Item</th>
+          <th style="text-align:center; border-bottom:1px solid #ddd; padding:6px 0;">Qty</th>
+          <th style="text-align:right; border-bottom:1px solid #ddd; padding:6px 0;">Total</th>
+        </tr>
+      </thead>
+      <tbody>${lines}</tbody>
+    </table>
+    <hr style="margin:12px 0;" />
+    <p style="margin:0; text-align:right; font-weight:700;">Grand Total: Tk ${Number(order.totalPrice).toFixed(2)}</p>
+  </body>
+</html>`;
+
+  const browserWindow = (globalThis as { window?: { open: (url?: string, target?: string, features?: string) => any } }).window;
+  if (!browserWindow) {
+    return;
+  }
+
+  const receiptWindow = browserWindow.open('', '_blank', 'width=700,height=900');
+  if (!receiptWindow) {
+    return;
+  }
+
+  receiptWindow.document.open();
+  receiptWindow.document.write(html);
+  receiptWindow.document.close();
+  receiptWindow.focus();
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { language } = useLanguage();
   const text = getCopy(language);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [lastOrder, setLastOrder] = useState<CheckoutOrder | null>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -23,14 +101,12 @@ export default function CheckoutPage() {
     const formData = new (FormData as any)(form);
     setLoading(true);
     setMessage('');
+    setLastOrder(null);
     try {
       const payload = Object.fromEntries(formData.entries()) as Record<string, string>;
-      await checkout(payload);
-      setMessage('Order placed successfully. Redirecting to your profile...');
-      setTimeout(() => {
-        router.push('/profile');
-        router.refresh();
-      }, 800);
+      const result = await checkout(payload);
+      setLastOrder(result.order);
+      setMessage('Order placed successfully. You can now download a receipt or go to profile.');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Checkout failed');
     } finally {
@@ -62,6 +138,16 @@ export default function CheckoutPage() {
               {loading ? 'Placing order...' : 'Place order'}
             </Button>
             {message ? <p className="mt-3 text-sm text-[#777777]">{message}</p> : null}
+            {lastOrder ? (
+              <div className="mt-3 flex flex-wrap gap-3">
+                <Button type="button" className="bg-[#D6EAF8] text-[#333333] hover:opacity-90" onClick={() => openReceipt(lastOrder)}>
+                  Download receipt
+                </Button>
+                <Button type="button" className="bg-[#FADADD] text-[#333333] hover:opacity-90" onClick={() => { router.push('/profile'); router.refresh(); }}>
+                  Go to profile
+                </Button>
+              </div>
+            ) : null}
           </div>
         </form>
       </Card>

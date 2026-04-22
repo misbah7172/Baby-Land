@@ -1,4 +1,4 @@
--- Full PostgreSQL schema for Baby Land
+-- Full PostgreSQL schema for ArtSoul By Nishita
 -- Target: Supabase / PostgreSQL
 -- Safe to run multiple times (uses IF NOT EXISTS and duplicate-object guards)
 

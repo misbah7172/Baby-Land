@@ -1,4 +1,4 @@
-# Code Review & Architecture Guide - Baby Land
+# Code Review & Architecture Guide - ArtSoul By Nishita
 
 Senior engineer comprehensive review and refactoring documentation.
 
@@ -8,7 +8,7 @@ Senior engineer comprehensive review and refactoring documentation.
 
 ### Changes Made
 
-This refactoring transforms Baby Land from a complex multi-provider setup (Postgres + MySQL + Render) into a clean, production-ready MySQL + Redis stack optimized for Railway deployment.
+This refactoring transforms ArtSoul By Nishita from a complex multi-provider setup (Postgres + MySQL + Render) into a clean, production-ready MySQL + Redis stack optimized for Railway deployment.
 
 **Key Improvements:**
 - ✅ Removed 40% of database complexity (eliminated Postgres provider switching)

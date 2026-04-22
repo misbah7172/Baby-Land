@@ -71,6 +71,60 @@ reviewRouter.get('/product/:productId', async (request, response, next) => {
   }
 });
 
+reviewRouter.get('/eligible', authRequired, async (request: AuthenticatedRequest, response, next) => {
+  try {
+    const userId = request.user!.id;
+
+    const deliveredItems = await prisma.orderItem.findMany({
+      where: {
+        order: {
+          userId,
+          orderStatus: 'DELIVERED'
+        },
+        product: {
+          reviews: {
+            none: {
+              userId
+            }
+          }
+        }
+      },
+      select: {
+        orderId: true,
+        productId: true,
+        productName: true,
+        order: {
+          select: {
+            createdAt: true
+          }
+        }
+      },
+      orderBy: {
+        order: {
+          createdAt: 'desc'
+        }
+      }
+    });
+
+    const byProduct = new Map<string, { orderId: string; productId: string; productName: string }>();
+    for (const item of deliveredItems) {
+      if (!byProduct.has(item.productId)) {
+        byProduct.set(item.productId, {
+          orderId: item.orderId,
+          productId: item.productId,
+          productName: item.productName
+        });
+      }
+    }
+
+    response.json({
+      eligible: Array.from(byProduct.values())
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 reviewRouter.post('/product/:productId', authRequired, validate(reviewSchema), async (request: AuthenticatedRequest, response, next) => {
   try {
     const body = (request as import('express').Request & { validated?: z.infer<typeof reviewSchema> }).validated?.body;

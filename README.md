@@ -1,4 +1,4 @@
-# Baby Land - E-Commerce Platform
+# ArtSoul By Nishita - E-Commerce Platform
 
 Production-ready e-commerce platform for baby clothes, accessories, and essentials.
 

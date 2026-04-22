@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -15,12 +15,19 @@ import { signInWithGooglePopup } from '@/lib/firebase';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { refreshUser } = useAuth();
+  const { user, loading: authLoading, refreshUser } = useAuth();
   const { language } = useLanguage();
   const text = getCopy(language);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace('/');
+      router.refresh();
+    }
+  }, [authLoading, user, router]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -53,6 +60,10 @@ export default function RegisterPage() {
     } finally {
       setGoogleLoading(false);
     }
+  }
+
+  if (authLoading || user) {
+    return null;
   }
 
   return (

@@ -1,4 +1,4 @@
--- Seed data for Baby Land on PostgreSQL / Supabase
+-- Seed data for ArtSoul By Nishita on PostgreSQL / Supabase
 -- Run this after the schema file.
 
 BEGIN;

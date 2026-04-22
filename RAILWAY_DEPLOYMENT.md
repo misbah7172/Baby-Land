@@ -1,6 +1,6 @@
-# Railway Deployment Guide - Baby Land
+# Railway Deployment Guide - ArtSoul By Nishita
 
-Complete guide for deploying Baby Land e-commerce platform to Railway with MySQL and Redis.
+Complete guide for deploying ArtSoul By Nishita e-commerce platform to Railway with MySQL and Redis.
 
 ## 🚀 Quick Start
 
@@ -64,7 +64,7 @@ COOKIE_SECURE=true
 1. Go to https://railway.app/dashboard
 2. Click "Create New Project"
 3. Select "Deploy from GitHub"
-4. Connect your Baby Land repository
+4. Connect your ArtSoul By Nishita repository
 5. Choose deployment method
 
 ### Step 3: Create MySQL Service
@@ -90,7 +90,7 @@ COOKIE_SECURE=true
 ### Step 5: Deploy Backend Service
 
 1. Click "Add Service" → "Deploy from GitHub"
-2. Select your Baby Land repo
+2. Select your ArtSoul By Nishita repo
 3. Configure:
    - Root Directory: `.` (root)
    - Dockerfile: `backend/Dockerfile`
@@ -119,7 +119,7 @@ COOKIE_SECURE=true
 ### Step 6: Deploy Frontend Service
 
 1. Click "Add Service" → "Deploy from GitHub"
-2. Select your Baby Land repo
+2. Select your ArtSoul By Nishita repo
 3. Configure:
    - Root Directory: `.` (root)
    - Dockerfile: `frontend/Dockerfile`

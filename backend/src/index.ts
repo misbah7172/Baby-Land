@@ -2,6 +2,7 @@ import { createApp } from './app';
 import { env } from './lib/env';
 import { connectRedis, disconnectRedis } from './lib/redis';
 import { prisma } from './lib/prisma';
+import { startCacheSync } from './services/cache-sync';
 
 async function startServer() {
   try {
@@ -21,6 +22,7 @@ async function startServer() {
 
     // Create Express app
     const app = createApp();
+    const stopCacheSync = startCacheSync();
 
     // Start listening
     const server = app.listen(env.PORT, () => {
@@ -36,6 +38,7 @@ async function startServer() {
         console.log('✓ Server closed');
         
         // Cleanup resources
+        stopCacheSync();
         await disconnectRedis();
         await prisma.$disconnect();
         

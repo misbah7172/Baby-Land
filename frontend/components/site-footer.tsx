@@ -48,7 +48,7 @@ export function SiteFooter() {
 
         <div className="border-t border-gray-600 pt-8">
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-            <p className="text-sm text-gray-400">© 2026 Baby Land. {text.footer.rights}</p>
+            <p className="text-sm text-gray-400">© 2026 ArtSoul By Nishita. {text.footer.rights}</p>
             <div className="flex gap-6 text-sm">
               <a href="#" className="text-gray-400 transition hover:text-[#FFB6A3]">Terms of Service</a>
               <a href="#" className="text-gray-400 transition hover:text-[#FFB6A3]">Privacy Policy</a>

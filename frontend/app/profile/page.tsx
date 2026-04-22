@@ -23,7 +23,7 @@ function openReceipt(order: any, customer: { name?: string | null; email?: strin
 <html>
   <head><meta charset="utf-8" /><title>Receipt ${receiptNo}</title></head>
   <body style="font-family: Arial, sans-serif; max-width: 560px; margin: 20px auto; color: #222;">
-    <h2 style="margin:0 0 8px;">Baby Land Receipt</h2>
+    <h2 style="margin:0 0 8px;">ArtSoul By Nishita Receipt</h2>
     <p style="margin:0 0 4px;">Receipt: ${receiptNo}</p>
     <p style="margin:0 0 4px;">Order: ${order.id}</p>
     <p style="margin:0 0 8px;">Date: ${new Date(order.createdAt).toLocaleString()}</p>

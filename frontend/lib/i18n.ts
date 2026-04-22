@@ -4,7 +4,7 @@ export const languageCookieName = 'babyland-lang';
 
 export const translations = {
   en: {
-    brand: 'Baby Land',
+    brand: 'ArtSoul By Nishita',
     nav: {
       home: 'Home',
       products: 'Products',
@@ -29,7 +29,7 @@ export const translations = {
       featuredTitle: "Parents' Top Picks",
       featuredDescription: 'Carefully chosen essentials that parents trust and babies love. Each product is selected for quality, safety, and comfort.',
       testimonialsTitle: 'Trusted by Parents',
-      whyTitle: 'Why Baby Land?',
+      whyTitle: 'Why ArtSoul By Nishita?',
       ctaTitle: 'Ready to Comfort Your Baby?',
       ctaDescription: 'Start exploring our collection of premium baby products selected just for your little one.',
       ctaButton: 'Shop Now',
@@ -68,7 +68,7 @@ export const translations = {
       switchLink: 'Sign up'
     },
     register: {
-      badge: 'Join Baby Land',
+      badge: 'Join ArtSoul By Nishita',
       title: 'Create an account',
       subtitle: 'Get access to fast checkout and order history',
       name: 'Full name',
@@ -106,7 +106,7 @@ export const translations = {
       later: 'Maybe later'
     },
     footer: {
-      aboutTitle: 'Baby Land',
+      aboutTitle: 'ArtSoul By Nishita',
       aboutDescription: 'Premium baby essentials designed with parents in mind. Safe, soft, and trusted.',
       shopTitle: 'Shop',
       shopAll: 'All Products',
@@ -130,7 +130,7 @@ export const translations = {
     }
   },
   bn: {
-    brand: 'Baby Land',
+    brand: 'ArtSoul By Nishita',
     nav: {
       home: 'হোম',
       products: 'পণ্য',
@@ -155,7 +155,7 @@ export const translations = {
       featuredTitle: 'পিতামাতাদের পছন্দের পণ্য',
       featuredDescription: 'মান, নিরাপত্তা ও আরামের ভিত্তিতে বাছাই করা পণ্য, যা পিতামাতারা ভরসা করেন এবং শিশুরা ভালোবাসে।',
       testimonialsTitle: 'পিতামাতাদের আস্থা',
-      whyTitle: 'কেন Baby Land?',
+      whyTitle: 'কেন ArtSoul By Nishita?',
       ctaTitle: 'আপনার শিশুর জন্য সেরা আরাম দিতে প্রস্তুত?',
       ctaDescription: 'আপনার ছোট্ট সোনার জন্য বাছাই করা প্রিমিয়াম বেবি পণ্যের সংগ্রহ ঘুরে দেখুন।',
       ctaButton: 'এখনই কিনুন',
@@ -194,7 +194,7 @@ export const translations = {
       switchLink: 'সাইন আপ করুন'
     },
     register: {
-      badge: 'Baby Land-এ যোগ দিন',
+      badge: 'ArtSoul By Nishita-এ যোগ দিন',
       title: 'অ্যাকাউন্ট তৈরি করুন',
       subtitle: 'দ্রুত চেকআউট এবং অর্ডার হিস্ট্রি পান',
       name: 'পূর্ণ নাম',
@@ -232,7 +232,7 @@ export const translations = {
       later: 'পরে দেব'
     },
     footer: {
-      aboutTitle: 'Baby Land',
+      aboutTitle: 'ArtSoul By Nishita',
       aboutDescription: 'পিতামাতার কথা মাথায় রেখে তৈরি প্রিমিয়াম বেবি এসেনশিয়াল। নিরাপদ, নরম, ও বিশ্বস্ত।',
       shopTitle: 'কেনাকাটা',
       shopAll: 'সব পণ্য',

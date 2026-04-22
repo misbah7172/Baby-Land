@@ -16,21 +16,21 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | Baby Land',
-    default: 'Baby Land - Premium Baby Essentials'
+    template: '%s | ArtSoul By Nishita',
+    default: 'ArtSoul By Nishita - Premium Baby Essentials'
   },
   description: 'Soft, premium baby essentials designed with parents in mind. Trusted quality products for your little one.',
   keywords: 'baby products, baby essentials, newborn items, infant care, safe baby products',
   openGraph: {
-    title: 'Baby Land - Premium Baby Essentials',
+    title: 'ArtSoul By Nishita - Premium Baby Essentials',
     description: 'Soft, premium baby essentials designed with parents in mind.',
     url: 'https://babyland.local',
-    siteName: 'Baby Land',
+    siteName: 'ArtSoul By Nishita',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Baby Land - Premium Baby Essentials',
+    title: 'ArtSoul By Nishita - Premium Baby Essentials',
     description: 'Soft, premium baby essentials designed with parents in mind.',
   }
 };

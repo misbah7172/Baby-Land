@@ -10,8 +10,8 @@ export const revalidate = 120;
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Shop Baby Products | Baby Land',
-  description: 'Browse the full Baby Land catalog and filter by category, price, and size.',
+  title: 'Shop Baby Products | ArtSoul By Nishita',
+  description: 'Browse the full ArtSoul By Nishita catalog and filter by category, price, and size.',
 };
 
 type SearchParams = Record<string, string | string[] | undefined>;

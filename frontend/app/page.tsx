@@ -20,7 +20,7 @@ export const revalidate = 300;
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Baby Land',
+  title: 'ArtSoul By Nishita',
   description: 'Premium baby essentials in a soft, parent-friendly storefront.'
 };
 

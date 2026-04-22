@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
-import { addReview, getMyOrders } from '@/lib/api';
+import { addReview, getEligibleReviews } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useLanguage } from '@/lib/language-context';
 import { getCopy } from '@/lib/i18n';
 
 type EligibleReview = {
+  orderId: string;
   productId: string;
   productName: string;
 };
@@ -24,6 +25,10 @@ function readInputValue(event: unknown) {
 
 function storageKey(userId: string, productId: string) {
   return `babyland-review-prompted:${userId}:${productId}`;
+}
+
+function storageKeyWithOrder(userId: string, orderId: string, productId: string) {
+  return `babyland-review-prompted:${userId}:${orderId}:${productId}`;
 }
 
 export function ReviewPrompt() {
@@ -45,22 +50,28 @@ export function ReviewPrompt() {
 
     let cancelled = false;
 
-    getMyOrders()
+    getEligibleReviews()
       .then((result) => {
         if (cancelled) {
           return;
         }
 
-        const candidate = (result.orders || [])
-          .filter((order) => order.orderStatus === 'DELIVERED')
-          .flatMap((order) => order.items || [])
-          .find((item) => !getLocalStorage()?.getItem(storageKey(user.id, item.productId)));
+        const candidate = (result.eligible || []).find(
+          (item) =>
+            !getLocalStorage()?.getItem(storageKey(user.id, item.productId)) &&
+            !getLocalStorage()?.getItem(storageKeyWithOrder(user.id, item.orderId, item.productId))
+        );
 
         if (candidate) {
-          const payload = { productId: candidate.productId, productName: candidate.productName };
+          const payload = {
+            orderId: candidate.orderId,
+            productId: candidate.productId,
+            productName: candidate.productName
+          };
           setEligibleReview(payload);
           setOpen(true);
           getLocalStorage()?.setItem(storageKey(user.id, candidate.productId), 'prompted');
+          getLocalStorage()?.setItem(storageKeyWithOrder(user.id, candidate.orderId, candidate.productId), 'prompted');
         }
       })
       .catch(() => {
@@ -89,6 +100,7 @@ export function ReviewPrompt() {
       setOpen(false);
       if (user) {
         getLocalStorage()?.setItem(storageKey(user.id, eligibleReview.productId), 'submitted');
+        getLocalStorage()?.setItem(storageKeyWithOrder(user.id, eligibleReview.orderId, eligibleReview.productId), 'submitted');
       }
     } finally {
       setSubmitting(false);

@@ -7,8 +7,8 @@ import { getCopy, normalizeLanguage } from '@/lib/i18n';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Contact Us | Baby Land',
-  description: 'Contact Baby Land support through WhatsApp or email.'
+  title: 'Contact Us | ArtSoul By Nishita',
+  description: 'Contact ArtSoul By Nishita support through WhatsApp or email.'
 };
 
 const whatsappNumber = '+8801824032222';

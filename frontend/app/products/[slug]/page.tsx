@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
 
   return {
-    title: `${slug.replace(/-/g, ' ')} | Baby Land`,
+    title: `${slug.replace(/-/g, ' ')} | ArtSoul By Nishita`,
     description: 'Browse premium baby essentials.'
   };
 }

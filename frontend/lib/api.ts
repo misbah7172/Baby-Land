@@ -175,6 +175,16 @@ export async function getPublicReviews(limit = 3) {
   return request<{ reviews: Array<{ id: string; rating: number; comment: string | null; user: { name: string }; product: { name: string; slug: string } }> }>(`/api/reviews?limit=${limit}`, undefined, backendApiBase);
 }
 
+export async function getEligibleReviews() {
+  return request<{
+    eligible: Array<{
+      orderId: string;
+      productId: string;
+      productName: string;
+    }>;
+  }>('/api/reviews/eligible', undefined, backendApiBase);
+}
+
 export async function addReview(productId: string, payload: { rating: number; comment?: string }) {
   return request(`/api/reviews/product/${productId}`, { method: 'POST', body: JSON.stringify(payload) }, backendApiBase);
 }

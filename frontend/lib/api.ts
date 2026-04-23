@@ -167,6 +167,33 @@ export async function getMyOrders() {
   }>('/api/orders/me', undefined, backendApiBase);
 }
 
+export async function trackOrder(payload: { orderId: string; phone: string }) {
+  const params = new URLSearchParams({ orderId: payload.orderId, phone: payload.phone });
+  return request<{
+    order: {
+      id: string;
+      orderStatus: 'PENDING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+      totalPrice: string;
+      createdAt: string;
+      shippingName: string;
+      shippingPhone: string;
+      items: Array<{
+        id: string;
+        productName: string;
+        quantity: number;
+        price: string;
+        size: string;
+      }>;
+      statusLog: Array<{
+        id: string;
+        status: 'PENDING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+        note: string | null;
+        createdAt: string;
+      }>;
+    };
+  }>(`/api/orders/track?${params.toString()}`, undefined, backendApiBase);
+}
+
 export async function getReviews(productId: string) {
   return request<{ reviews: Array<{ id: string; rating: number; comment: string | null; user: { name: string } }> }>(`/api/reviews/product/${productId}`, undefined, backendApiBase);
 }

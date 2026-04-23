@@ -36,9 +36,13 @@ export default function LoginPage() {
     try {
       const payload = Object.fromEntries(formData.entries()) as { email: string; password: string };
       await login(payload);
-      await refreshUser();
+      try {
+        await refreshUser();
+      } catch {
+        // Redirect should still continue when /me has a transient failure.
+      }
       setMessage('Signed in successfully. Redirecting...');
-      router.push('/');
+      router.replace('/');
       router.refresh();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Login failed');
@@ -51,9 +55,13 @@ export default function LoginPage() {
     setGoogleLoading(true);
     try {
       await signInWithGooglePopup();
-      await refreshUser();
+      try {
+        await refreshUser();
+      } catch {
+        // Redirect should still continue when /me has a transient failure.
+      }
       setMessage('Signed in successfully with Google. Redirecting...');
-      router.push('/');
+      router.replace('/');
       router.refresh();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Google sign-in failed');

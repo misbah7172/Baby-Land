@@ -6,6 +6,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { checkout } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
+import { useCart } from '@/lib/cart-context';
 import { useLanguage } from '@/lib/language-context';
 import { getCopy } from '@/lib/i18n';
 import { Button, Card, SectionTitle } from '@/components/ui';
@@ -89,6 +91,8 @@ function openReceipt(order: CheckoutOrder) {
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const { refreshCart } = useCart();
   const { language } = useLanguage();
   const text = getCopy(language);
   const [message, setMessage] = useState('');
@@ -106,6 +110,11 @@ export default function CheckoutPage() {
       const payload = Object.fromEntries(formData.entries()) as Record<string, string>;
       const result = await checkout(payload);
       setLastOrder(result.order);
+      await refreshCart();
+      const localStorage = (globalThis as { localStorage?: { setItem: (key: string, value: string) => void } }).localStorage;
+      if (localStorage) {
+        localStorage.setItem('last-order-track', JSON.stringify({ orderId: result.order.id, phone: payload.shippingPhone || '' }));
+      }
       setMessage('Order placed successfully. You can now download a receipt or go to profile.');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Checkout failed');
@@ -143,9 +152,15 @@ export default function CheckoutPage() {
                 <Button type="button" className="bg-[#D6EAF8] text-[#333333] hover:opacity-90" onClick={() => openReceipt(lastOrder)}>
                   Download receipt
                 </Button>
-                <Button type="button" className="bg-[#FADADD] text-[#333333] hover:opacity-90" onClick={() => { router.push('/profile'); router.refresh(); }}>
-                  Go to profile
-                </Button>
+                {user ? (
+                  <Button type="button" className="bg-[#FADADD] text-[#333333] hover:opacity-90" onClick={() => { router.push('/profile'); router.refresh(); }}>
+                    Go to profile
+                  </Button>
+                ) : (
+                  <Button type="button" className="bg-[#FADADD] text-[#333333] hover:opacity-90" onClick={() => { router.push(`/track-order?orderId=${encodeURIComponent(lastOrder.id)}&phone=${encodeURIComponent(lastOrder.shippingPhone)}`); router.refresh(); }}>
+                    Track order
+                  </Button>
+                )}
               </div>
             ) : null}
           </div>

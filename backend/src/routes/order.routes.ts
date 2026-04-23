@@ -24,6 +24,13 @@ const checkoutSchema = z.object({
   })
 });
 
+const trackOrderQuerySchema = z.object({
+  query: z.object({
+    orderId: z.string().min(3),
+    phone: z.string().min(7)
+  })
+});
+
 async function getCartItems(request: AuthenticatedRequest) {
   if (request.user) {
     const cart = await prisma.cart.findUnique({
@@ -128,6 +135,45 @@ orderRouter.post('/', optionalAuth, validate(checkoutSchema), async (request: Au
     });
 
     response.status(201).json({ order });
+  } catch (error) {
+    next(error);
+  }
+});
+
+orderRouter.get('/track', validate(trackOrderQuerySchema), async (request, response, next) => {
+  try {
+    const query = (request as import('express').Request & { validated?: z.infer<typeof trackOrderQuerySchema> }).validated?.query;
+    if (!query) {
+      response.status(400).json({ message: 'Invalid query' });
+      return;
+    }
+
+    const normalizedPhone = query.phone.trim();
+    const order = await prisma.order.findFirst({
+      where: {
+        id: query.orderId,
+        shippingPhone: normalizedPhone
+      },
+      include: {
+        items: {
+          select: {
+            id: true,
+            productName: true,
+            quantity: true,
+            price: true,
+            size: true
+          }
+        },
+        statusLog: { orderBy: { createdAt: 'desc' } }
+      }
+    });
+
+    if (!order) {
+      response.status(404).json({ message: 'Order not found for the provided details' });
+      return;
+    }
+
+    response.json({ order });
   } catch (error) {
     next(error);
   }

@@ -10,11 +10,19 @@ import { useLanguage } from '@/lib/language-context';
 import { getCopy } from '@/lib/i18n';
 import { Button } from './ui';
 
-const navLinks = [
+const desktopNavLinks = [
   { href: '/', key: 'home' },
   { href: '/products', key: 'products' },
   { href: '/cart', key: 'cart' },
+  { href: '/track-order', key: 'track' },
   { href: '/profile', key: 'profile' }
+] as const;
+
+const mobileBottomNavLinks = [
+  { href: '/', key: 'home' },
+  { href: '/products', key: 'products' },
+  { href: '/cart', key: 'cart' },
+  { href: '/track-order', key: 'track' }
 ] as const;
 
 export function SiteHeader() {
@@ -53,7 +61,7 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden items-center gap-6 text-sm text-stone-600 md:flex">
-          {navLinks.map((link) => (
+          {desktopNavLinks.map((link) => (
             <Link key={link.href} href={link.href} className="transition hover:text-rosewood">
               {link.key === 'cart' ? (
                 <span className="inline-flex items-center gap-2">
@@ -117,7 +125,7 @@ export function SiteHeader() {
           />
           <div className="fixed inset-x-0 bottom-[72px] z-50 mx-auto w-[calc(100%-16px)] max-w-md rounded-3xl border border-[#FADADD] bg-white/95 p-4 shadow-[0_20px_50px_-20px_rgba(90,60,52,0.45)] backdrop-blur md:hidden">
           <nav className="flex flex-col gap-2 p-4">
-            {navLinks.map((link) => (
+            {desktopNavLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -180,7 +188,7 @@ export function SiteHeader() {
 
       <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[#FADADD] bg-white/95 shadow-[0_-12px_30px_-20px_rgba(90,60,52,0.55)] backdrop-blur-xl md:hidden">
         <div className="mx-auto flex max-w-md items-center justify-between px-2 pb-[max(8px,env(safe-area-inset-bottom))] pt-2">
-          {navLinks.map((link) => {
+          {mobileBottomNavLinks.map((link) => {
             const active = Boolean(isActive(link.href));
             return (
               <Link
@@ -216,10 +224,9 @@ export function SiteHeader() {
                     ) : null}
                   </span>
                 ) : null}
-                {link.key === 'profile' ? (
+                {link.key === 'track' ? (
                   <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="8" r="4" />
-                    <path d="M4 21a8 8 0 0 1 16 0" />
+                    <path d="M3 12h4l3-7 4 14 3-7h4" />
                   </svg>
                 ) : null}
                 <span>{text.nav[link.key]}</span>

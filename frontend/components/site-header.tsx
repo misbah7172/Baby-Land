@@ -226,7 +226,12 @@ export function SiteHeader() {
                 ) : null}
                 {link.key === 'track' ? (
                   <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 12h4l3-7 4 14 3-7h4" />
+                    <path d="M3 13h15" />
+                    <path d="M5 13V8h9l3 3v2" />
+                    <circle cx="8" cy="17" r="1.5" />
+                    <circle cx="18" cy="17" r="1.5" />
+                    <path d="M5 13l-1 4" />
+                    <path d="M20 13l1 4" />
                   </svg>
                 ) : null}
                 <span>{text.nav[link.key]}</span>

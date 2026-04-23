@@ -167,10 +167,13 @@ export async function getMyOrders() {
   }>('/api/orders/me', undefined, backendApiBase);
 }
 
-export async function trackOrder(payload: { orderId: string; phone: string }) {
-  const params = new URLSearchParams({ orderId: payload.orderId, phone: payload.phone });
+export async function trackOrder(payload: { orderId?: string; phone: string }) {
+  const params = new URLSearchParams({ phone: payload.phone });
+  if (payload.orderId) {
+    params.set('orderId', payload.orderId);
+  }
   return request<{
-    order: {
+    orders: Array<{
       id: string;
       orderStatus: 'PENDING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
       totalPrice: string;
@@ -190,7 +193,7 @@ export async function trackOrder(payload: { orderId: string; phone: string }) {
         note: string | null;
         createdAt: string;
       }>;
-    };
+    }>;
   }>(`/api/orders/track?${params.toString()}`, undefined, backendApiBase);
 }
 

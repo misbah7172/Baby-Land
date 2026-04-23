@@ -26,7 +26,7 @@ const checkoutSchema = z.object({
 
 const trackOrderQuerySchema = z.object({
   query: z.object({
-    orderId: z.string().min(3),
+    orderId: z.string().min(3).optional(),
     phone: z.string().min(7)
   })
 });
@@ -149,10 +149,10 @@ orderRouter.get('/track', validate(trackOrderQuerySchema), async (request, respo
     }
 
     const normalizedPhone = query.phone.trim();
-    const order = await prisma.order.findFirst({
+    const orders = await prisma.order.findMany({
       where: {
-        id: query.orderId,
-        shippingPhone: normalizedPhone
+        shippingPhone: normalizedPhone,
+        ...(query.orderId ? { id: query.orderId } : {})
       },
       include: {
         items: {
@@ -165,15 +165,16 @@ orderRouter.get('/track', validate(trackOrderQuerySchema), async (request, respo
           }
         },
         statusLog: { orderBy: { createdAt: 'desc' } }
-      }
+      },
+      orderBy: { createdAt: 'desc' }
     });
 
-    if (!order) {
+    if (orders.length === 0) {
       response.status(404).json({ message: 'Order not found for the provided details' });
       return;
     }
 
-    response.json({ order });
+    response.json({ orders });
   } catch (error) {
     next(error);
   }

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { authRequired, AuthenticatedRequest } from '../middleware/auth';
+import { authRequired, AuthenticatedRequest, optionalAuth } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
 import { validate } from '../middleware/validate';
 import { deleteByPattern, getCachedJson, setCachedJson } from '../utils/cache';
@@ -71,8 +71,13 @@ reviewRouter.get('/product/:productId', async (request, response, next) => {
   }
 });
 
-reviewRouter.get('/eligible', authRequired, async (request: AuthenticatedRequest, response, next) => {
+reviewRouter.get('/eligible', optionalAuth, async (request: AuthenticatedRequest, response, next) => {
   try {
+    if (!request.user) {
+      response.json({ eligible: [] });
+      return;
+    }
+
     const userId = request.user!.id;
 
     const deliveredItems = await prisma.orderItem.findMany({

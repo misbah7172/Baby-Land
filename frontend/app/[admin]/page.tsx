@@ -642,7 +642,7 @@ export default function AdminDashboard() {
                   <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <div className="flex-1">
                       <p className="font-semibold text-[#333333]">Order: {order.id}</p>
-                      <p className="text-sm text-[#777777]">{order.user?.email || 'Guest user'} • ৳{order.totalPrice}</p>
+                      <p className="text-sm text-[#777777]">{order.user?.email || 'Accountless order (guest)'} • ৳{order.totalPrice}</p>
                     </div>
                     <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
                       <button
@@ -695,8 +695,8 @@ export default function AdminDashboard() {
                   {/* Customer Info */}
                   <div className="border-b border-[#FADADD] pb-4">
                     <h4 className="font-semibold text-[#333333] mb-2">Customer</h4>
-                    <p className="text-[#555555]">{selectedOrderDetail.user?.name || 'Guest'}</p>
-                    <p className="text-sm text-[#777777]">{selectedOrderDetail.user?.email || 'No email'}</p>
+                    <p className="text-[#555555]">{selectedOrderDetail.user?.name || 'Accountless order (guest)'}</p>
+                    <p className="text-sm text-[#777777]">{selectedOrderDetail.user?.email || 'No account email'}</p>
                   </div>
 
                   {/* Order Items */}

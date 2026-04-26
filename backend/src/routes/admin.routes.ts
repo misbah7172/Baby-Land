@@ -447,3 +447,186 @@ adminRouter.put('/settings/homepage', validate(homepageSettingsSchema), async (r
     next(error);
   }
 });
+
+// ============ ART SERVICE MANAGEMENT ============
+
+// Get all portfolio entries
+adminRouter.get('/art-portfolio', async (_request, response, next) => {
+  try {
+    const portfolio = await prisma.artPortfolio.findMany({
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+    });
+
+    response.json({ portfolio });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Create portfolio entry
+const artPortfolioSchema = z.object({
+  body: z.object({
+    title: z.string().min(1).max(200),
+    caption: z.string().min(1).max(1000),
+    imageUrl: z.string().url(),
+    sortOrder: z.number().int().min(0).default(0),
+  }),
+});
+
+adminRouter.post(
+  '/art-portfolio',
+  validate(artPortfolioSchema),
+  async (request, response, next) => {
+    try {
+      const body = (request as import('express').Request & { validated?: z.infer<typeof artPortfolioSchema> }).validated?.body;
+      if (!body) {
+        response.status(400).json({ message: 'Invalid payload' });
+        return;
+      }
+
+      const entry = await prisma.artPortfolio.create({
+        data: {
+          title: body.title,
+          caption: body.caption,
+          imageUrl: body.imageUrl,
+          sortOrder: body.sortOrder,
+        },
+      });
+
+      await deleteByPattern('art:*');
+      response.status(201).json(entry);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Update portfolio entry
+adminRouter.patch(
+  '/art-portfolio/:id',
+  validate(artPortfolioSchema),
+  async (request, response, next) => {
+    try {
+      const body = (request as import('express').Request & { validated?: z.infer<typeof artPortfolioSchema> }).validated?.body;
+      if (!body) {
+        response.status(400).json({ message: 'Invalid payload' });
+        return;
+      }
+
+      const entry = await prisma.artPortfolio.update({
+        where: { id: request.params.id as string },
+        data: {
+          title: body.title,
+          caption: body.caption,
+          imageUrl: body.imageUrl,
+          sortOrder: body.sortOrder,
+        },
+      });
+
+      await deleteByPattern('art:*');
+      response.json(entry);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Delete portfolio entry
+adminRouter.delete('/art-portfolio/:id', async (request, response, next) => {
+  try {
+    await prisma.artPortfolio.delete({
+      where: { id: request.params.id as string },
+    });
+
+    await deleteByPattern('art:*');
+    response.json({ ok: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get all practical khata entries
+adminRouter.get('/practical-khata', async (_request, response, next) => {
+  try {
+    const entries = await prisma.practicalKhata.findMany({
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+    });
+
+    response.json({ practicalKhata: entries });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Create practical khata entry
+const practicalKhataSchema = z.object({
+  body: z.object({
+    title: z.string().min(1).max(200),
+    caption: z.string().min(1).max(1000),
+    imageUrl: z.string().url(),
+    sortOrder: z.number().int().min(0).default(0),
+  }),
+});
+
+adminRouter.patch(
+  '/practical-khata/:id',
+  validate(practicalKhataSchema),
+  async (request, response, next) => {
+    try {
+      const body = (request as import('express').Request & { validated?: z.infer<typeof practicalKhataSchema> }).validated?.body;
+      if (!body) {
+        response.status(400).json({ message: 'Invalid payload' });
+        return;
+      }
+
+      const entry = await prisma.practicalKhata.update({
+        where: { id: request.params.id as string },
+        data: {
+          title: body.title,
+          caption: body.caption,
+          imageUrl: body.imageUrl,
+          sortOrder: body.sortOrder,
+        },
+      });
+
+      await deleteByPattern('art:*');
+      response.json(entry);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+adminRouter.post('/practical-khata', validate(practicalKhataSchema), async (request, response, next) => {
+  try {
+    const body = (request as import('express').Request & { validated?: z.infer<typeof practicalKhataSchema> }).validated?.body;
+    if (!body) {
+      response.status(400).json({ message: 'Invalid payload' });
+      return;
+    }
+
+    const entry = await prisma.practicalKhata.create({
+      data: {
+        title: body.title,
+        caption: body.caption,
+        imageUrl: body.imageUrl,
+        sortOrder: body.sortOrder,
+      },
+    });
+
+    await deleteByPattern('art:*');
+    response.status(201).json(entry);
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminRouter.delete('/practical-khata/:id', async (request, response, next) => {
+  try {
+    await prisma.practicalKhata.delete({ where: { id: request.params.id as string } });
+    await deleteByPattern('art:*');
+    response.json({ ok: true });
+  } catch (error) {
+    next(error);
+  }
+});

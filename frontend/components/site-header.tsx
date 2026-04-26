@@ -20,7 +20,7 @@ const desktopNavLinks = [
 
 const artLinks = [
   { href: '/art/portfolio', key: 'portfolio' },
-  { href: '/art/post', key: 'post_art' }
+  { href: '/art/practical-khata', key: 'practical_khata' }
 ] as const;
 
 const mobileBottomNavLinks = [

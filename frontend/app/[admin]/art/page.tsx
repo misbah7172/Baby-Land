@@ -8,14 +8,13 @@ import {
   createAdminArtPortfolio,
   updateAdminArtPortfolio,
   deleteAdminArtPortfolio,
-  getAdminArtPosts,
-  updateAdminArtPostStatus,
-  deleteAdminArtPost
+  getAdminPracticalKhata,
+  createAdminPracticalKhata,
+  updateAdminPracticalKhata,
+  deleteAdminPracticalKhata,
 } from '@/lib/api';
-import { useLanguage } from '@/lib/language-context';
-import { getCopy } from '@/lib/i18n';
 
-interface PortfolioEntry {
+interface ShowcaseEntry {
   id: string;
   title: string;
   caption: string;
@@ -24,55 +23,54 @@ interface PortfolioEntry {
   createdAt: string;
 }
 
-interface ArtPost {
-  id: string;
-  title: string;
-  caption: string;
-  imageUrl: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  createdAt: string;
-  user: {
-    id: string;
-    name: string;
-    email: string;
-  };
-}
+type TabKey = 'portfolio' | 'practicalKhata';
+
+const emptyForm = {
+  title: '',
+  caption: '',
+  imageUrl: '',
+  sortOrder: 0,
+};
 
 export default function AdminArtPage() {
-  const { language } = useLanguage();
-  const text = getCopy(language);
-  const [activeTab, setActiveTab] = useState<'portfolio' | 'posts'>('portfolio');
+  const [activeTab, setActiveTab] = useState<TabKey>('portfolio');
 
-  // Portfolio state
-  const [portfolio, setPortfolio] = useState<PortfolioEntry[]>([]);
+  const [portfolio, setPortfolio] = useState<ShowcaseEntry[]>([]);
   const [portfolioLoading, setPortfolioLoading] = useState(true);
-  const [portfolioForm, setPortfolioForm] = useState({
-    title: '',
-    caption: '',
-    imageUrl: '',
-    sortOrder: 0,
-  });
+  const [portfolioForm, setPortfolioForm] = useState(emptyForm);
   const [editingPortfolio, setEditingPortfolio] = useState<string | null>(null);
 
-  // Posts state
-  const [posts, setPosts] = useState<ArtPost[]>([]);
-  const [postsLoading, setPostsLoading] = useState(true);
+  const [practicalKhata, setPracticalKhata] = useState<ShowcaseEntry[]>([]);
+  const [practicalKhataLoading, setPracticalKhataLoading] = useState(true);
+  const [practicalKhataForm, setPracticalKhataForm] = useState(emptyForm);
+  const [editingPracticalKhata, setEditingPracticalKhata] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPortfolio();
-    fetchPosts();
+    fetchPracticalKhata();
   }, []);
 
-  // Portfolio Functions
   const fetchPortfolio = async () => {
     try {
       setPortfolioLoading(true);
       const response = await getAdminArtPortfolio();
       setPortfolio(response.portfolio);
     } catch (error) {
-      console.error('Error fetching portfolio:', error);
+      console.error('Error fetching art portfolio:', error);
     } finally {
       setPortfolioLoading(false);
+    }
+  };
+
+  const fetchPracticalKhata = async () => {
+    try {
+      setPracticalKhataLoading(true);
+      const response = await getAdminPracticalKhata();
+      setPracticalKhata(response.practicalKhata);
+    } catch (error) {
+      console.error('Error fetching practical khata:', error);
+    } finally {
+      setPracticalKhataLoading(false);
     }
   };
 
@@ -86,321 +84,290 @@ export default function AdminArtPage() {
         await createAdminArtPortfolio(portfolioForm);
       }
 
-      setPortfolioForm({ title: '', caption: '', imageUrl: '', sortOrder: 0 });
+      setPortfolioForm(emptyForm);
       setEditingPortfolio(null);
       await fetchPortfolio();
     } catch (error) {
-      console.error('Error saving portfolio:', error);
+      console.error('Error saving art portfolio entry:', error);
+    }
+  };
+
+  const handlePracticalKhataSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      if (editingPracticalKhata) {
+        await updateAdminPracticalKhata(editingPracticalKhata, practicalKhataForm);
+      } else {
+        await createAdminPracticalKhata(practicalKhataForm);
+      }
+
+      setPracticalKhataForm(emptyForm);
+      setEditingPracticalKhata(null);
+      await fetchPracticalKhata();
+    } catch (error) {
+      console.error('Error saving practical khata entry:', error);
     }
   };
 
   const handleDeletePortfolio = async (id: string) => {
-    // Use globalThis to get window
     if (!((globalThis as any).window?.confirm?.('Are you sure?') ?? true)) return;
 
     try {
       await deleteAdminArtPortfolio(id);
       await fetchPortfolio();
     } catch (error) {
-      console.error('Error deleting portfolio:', error);
+      console.error('Error deleting art portfolio entry:', error);
     }
   };
 
-  // Posts Functions
-  const fetchPosts = async () => {
-    try {
-      setPostsLoading(true);
-      const response = await getAdminArtPosts();
-      setPosts(response.posts);
-    } catch (error) {
-      console.error('Error fetching posts:', error);
-    } finally {
-      setPostsLoading(false);
-    }
-  };
-
-  const handleUpdatePostStatus = async (id: string, status: 'APPROVED' | 'REJECTED') => {
-    try {
-      await updateAdminArtPostStatus(id, status);
-      await fetchPosts();
-    } catch (error) {
-      console.error('Error updating post status:', error);
-    }
-  };
-
-  const handleDeletePost = async (id: string) => {
-    // Use globalThis to get window
+  const handleDeletePracticalKhata = async (id: string) => {
     if (!((globalThis as any).window?.confirm?.('Are you sure?') ?? true)) return;
 
     try {
-      await deleteAdminArtPost(id);
-      await fetchPosts();
+      await deleteAdminPracticalKhata(id);
+      await fetchPracticalKhata();
     } catch (error) {
-      console.error('Error deleting post:', error);
+      console.error('Error deleting practical khata entry:', error);
     }
   };
 
-  return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold text-rosewood mb-8">Art Management</h1>
+  const renderEditor = (
+    title: string,
+    form: typeof emptyForm,
+    onChange: (next: typeof emptyForm) => void,
+    onSubmit: (e: React.FormEvent) => void,
+    editingId: string | null,
+    onCancel: () => void
+  ) => {
+    const mode = editingId ? 'Edit' : 'Add';
 
-      {/* Tabs */}
-      <div className="flex gap-4 mb-8">
+    return (
+      <div className="rounded-lg bg-white p-6 shadow">
+        <h2 className="mb-4 text-xl font-semibold">{mode} {title} Entry</h2>
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-sm font-medium">Title</label>
+              <input
+                type="text"
+                value={form.title}
+                onChange={(e) => {
+                  const target = e.target as HTMLInputElement;
+                  onChange({ ...form, title: target.value });
+                }}
+                placeholder="Entry title"
+                className="w-full rounded-lg border border-stone-300 px-3 py-2"
+                required
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium">Sort Order</label>
+              <input
+                type="number"
+                value={form.sortOrder}
+                onChange={(e) => {
+                  const target = e.target as HTMLInputElement;
+                  onChange({ ...form, sortOrder: Number.parseInt(target.value || '0', 10) || 0 });
+                }}
+                className="w-full rounded-lg border border-stone-300 px-3 py-2"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium">Image URL</label>
+            <input
+              type="url"
+              value={form.imageUrl}
+              onChange={(e) => {
+                const target = e.target as HTMLInputElement;
+                onChange({ ...form, imageUrl: target.value });
+              }}
+              placeholder="https://example.com/image.jpg"
+              className="w-full rounded-lg border border-stone-300 px-3 py-2"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium">Caption</label>
+            <textarea
+              value={form.caption}
+              onChange={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                onChange({ ...form, caption: target.value });
+              }}
+              placeholder="Entry caption"
+              rows={3}
+              className="w-full rounded-lg border border-stone-300 px-3 py-2"
+              required
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              className="rounded-lg bg-rosewood px-6 py-2 font-medium text-white hover:bg-[#58342f]"
+            >
+              {mode} Entry
+            </button>
+            {editingId && (
+              <button
+                type="button"
+                onClick={onCancel}
+                className="rounded-lg bg-stone-300 px-6 py-2 font-medium text-stone-800"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+        </form>
+      </div>
+    );
+  };
+
+  const renderList = (
+    title: string,
+    entries: ShowcaseEntry[],
+    loading: boolean,
+    onEdit: (entry: ShowcaseEntry) => void,
+    onDelete: (id: string) => void,
+    emptyLabel: string
+  ) => (
+    <div className="rounded-lg bg-white p-6 shadow">
+      <h2 className="mb-4 text-xl font-semibold">{title} Entries</h2>
+      {loading ? (
+        <p className="text-stone-600">Loading...</p>
+      ) : entries.length > 0 ? (
+        <div className="grid gap-4">
+          {entries.map((entry) => (
+            <div key={entry.id} className="flex gap-4 rounded-lg border border-stone-200 p-4">
+              {entry.imageUrl && (
+                <div className="relative h-24 w-24 flex-shrink-0">
+                  <Image
+                    src={entry.imageUrl}
+                    alt={entry.title}
+                    fill
+                    className="rounded object-cover"
+                  />
+                </div>
+              )}
+              <div className="flex-1">
+                <h3 className="font-semibold">{entry.title}</h3>
+                <p className="line-clamp-2 text-sm text-stone-600">{entry.caption}</p>
+                <p className="mt-1 text-xs text-stone-500">Sort: {entry.sortOrder}</p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => onEdit(entry)}
+                  className="rounded bg-blue-500 px-3 py-1 text-sm text-white"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => onDelete(entry.id)}
+                  className="rounded bg-red-500 px-3 py-1 text-sm text-white"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-stone-600">{emptyLabel}</p>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="mx-auto max-w-7xl p-8">
+      <h1 className="mb-8 text-3xl font-bold text-rosewood">Showcase Management</h1>
+
+      <div className="mb-8 flex gap-4">
         <button
           onClick={() => setActiveTab('portfolio')}
-          className={`px-6 py-2 rounded-lg font-medium transition ${
+          className={`rounded-lg px-6 py-2 font-medium transition ${
             activeTab === 'portfolio'
               ? 'bg-rosewood text-white'
               : 'bg-stone-200 text-stone-800 hover:bg-stone-300'
           }`}
         >
-          Portfolio ({portfolio.length})
+          Art Portfolio ({portfolio.length})
         </button>
         <button
-          onClick={() => setActiveTab('posts')}
-          className={`px-6 py-2 rounded-lg font-medium transition ${
-            activeTab === 'posts'
+          onClick={() => setActiveTab('practicalKhata')}
+          className={`rounded-lg px-6 py-2 font-medium transition ${
+            activeTab === 'practicalKhata'
               ? 'bg-rosewood text-white'
               : 'bg-stone-200 text-stone-800 hover:bg-stone-300'
           }`}
         >
-          User Posts ({posts.length})
+          Practical Khata ({practicalKhata.length})
         </button>
       </div>
 
-      {/* Portfolio Tab */}
       {activeTab === 'portfolio' && (
         <div className="space-y-8">
-          {/* Add/Edit Portfolio Form */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">
-              {editingPortfolio ? 'Edit' : 'Add'} Portfolio Entry
-            </h2>
-            <form onSubmit={handlePortfolioSubmit} className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Title</label>
-                  <input
-                    type="text"
-                    value={portfolioForm.title}
-                    onChange={(e) => {
-                      const target = e.target as HTMLInputElement;
-                      setPortfolioForm(prev => ({ ...prev, title: target.value }))
-                    }}
-                    placeholder="Portfolio title"
-                    className="w-full px-3 py-2 border border-stone-300 rounded-lg"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Sort Order</label>
-                  <input
-                    type="number"
-                    value={portfolioForm.sortOrder}
-                    onChange={(e) => {
-                      const target = e.target as HTMLInputElement;
-                      setPortfolioForm(prev => ({
-                        ...prev,
-                        sortOrder: parseInt(target.value),
-                      }))
-                    }}
-                    className="w-full px-3 py-2 border border-stone-300 rounded-lg"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Image URL</label>
-                <input
-                  type="url"
-                  value={portfolioForm.imageUrl}
-                    onChange={(e) => {
-                      const target = e.target as HTMLInputElement;
-                      setPortfolioForm(prev => ({ ...prev, imageUrl: target.value }))
-                    }}
-                  placeholder="https://example.com/image.jpg"
-                  className="w-full px-3 py-2 border border-stone-300 rounded-lg"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Caption</label>
-                <textarea
-                  value={portfolioForm.caption}
-                    onChange={(e) => {
-                      const target = e.target as HTMLTextAreaElement;
-                      setPortfolioForm(prev => ({ ...prev, caption: target.value }))
-                    }}
-                  placeholder="Portfolio caption"
-                  rows={3}
-                  className="w-full px-3 py-2 border border-stone-300 rounded-lg"
-                  required
-                />
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  className="bg-rosewood text-white px-6 py-2 rounded-lg font-medium hover:bg-[#58342f]"
-                >
-                  {editingPortfolio ? 'Update' : 'Add'} Entry
-                </button>
-                {editingPortfolio && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingPortfolio(null);
-                      setPortfolioForm({ title: '', caption: '', imageUrl: '', sortOrder: 0 });
-                    }}
-                    className="bg-stone-300 text-stone-800 px-6 py-2 rounded-lg font-medium"
-                  >
-                    Cancel
-                  </button>
-                )}
-              </div>
-            </form>
-          </div>
-
-          {/* Portfolio List */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Portfolio Entries</h2>
-            {portfolioLoading ? (
-              <p className="text-stone-600">Loading...</p>
-            ) : portfolio.length > 0 ? (
-              <div className="grid gap-4">
-                {portfolio.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className="border border-stone-200 rounded-lg p-4 flex gap-4"
-                  >
-                    {entry.imageUrl && (
-                      <div className="relative w-24 h-24 flex-shrink-0">
-                        <Image
-                          src={entry.imageUrl}
-                          alt={entry.title}
-                          fill
-                          className="object-cover rounded"
-                        />
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{entry.title}</h3>
-                      <p className="text-sm text-stone-600 line-clamp-2">
-                        {entry.caption}
-                      </p>
-                      <p className="text-xs text-stone-500 mt-1">
-                        Sort: {entry.sortOrder}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          setEditingPortfolio(entry.id);
-                          setPortfolioForm({
-                            title: entry.title,
-                            caption: entry.caption,
-                            imageUrl: entry.imageUrl,
-                            sortOrder: entry.sortOrder,
-                          });
-                        }}
-                        className="bg-blue-500 text-white px-3 py-1 rounded text-sm"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeletePortfolio(entry.id)}
-                        className="bg-red-500 text-white px-3 py-1 rounded text-sm"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-stone-600">No portfolio entries yet.</p>
-            )}
-          </div>
+          {renderEditor(
+            'Art Portfolio',
+            portfolioForm,
+            setPortfolioForm,
+            handlePortfolioSubmit,
+            editingPortfolio,
+            () => {
+              setEditingPortfolio(null);
+              setPortfolioForm(emptyForm);
+            }
+          )}
+          {renderList(
+            'Art Portfolio',
+            portfolio,
+            portfolioLoading,
+            (entry) => {
+              setEditingPortfolio(entry.id);
+              setPortfolioForm({
+                title: entry.title,
+                caption: entry.caption,
+                imageUrl: entry.imageUrl,
+                sortOrder: entry.sortOrder,
+              });
+            },
+            handleDeletePortfolio,
+            'No art portfolio entries yet.'
+          )}
         </div>
       )}
 
-      {/* Posts Tab */}
-      {activeTab === 'posts' && (
-        <div className="space-y-6">
-          {postsLoading ? (
-            <p className="text-stone-600">Loading...</p>
-          ) : posts.length > 0 ? (
-            posts.map((post) => (
-              <div
-                key={post.id}
-                className="bg-white rounded-lg shadow p-6 border border-stone-200"
-              >
-                <div className="flex gap-6 mb-4">
-                  {post.imageUrl && (
-                    <div className="relative w-32 h-32 flex-shrink-0">
-                      <Image
-                        src={post.imageUrl}
-                        alt={post.title}
-                        fill
-                        className="object-cover rounded"
-                      />
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold">{post.title}</h3>
-                    <p className="text-stone-600 line-clamp-2">{post.caption}</p>
-                    <div className="mt-3 text-sm text-stone-600">
-                      <p>
-                        <strong>By:</strong> {post.user.name} ({post.user.email})
-                      </p>
-                      <p>
-                        <strong>Submitted:</strong>{' '}
-                        {new Date(post.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span
-                      className={`text-sm font-semibold px-3 py-1 rounded-full block mb-4 ${
-                        post.status === 'APPROVED'
-                          ? 'bg-green-100 text-green-700'
-                          : post.status === 'REJECTED'
-                          ? 'bg-red-100 text-red-700'
-                          : 'bg-yellow-100 text-yellow-700'
-                      }`}
-                    >
-                      {post.status}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-2 flex-wrap">
-                  {post.status !== 'APPROVED' && (
-                    <button
-                      onClick={() => handleUpdatePostStatus(post.id, 'APPROVED')}
-                      className="bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-600"
-                    >
-                      Approve
-                    </button>
-                  )}
-                  {post.status !== 'REJECTED' && (
-                    <button
-                      onClick={() => handleUpdatePostStatus(post.id, 'REJECTED')}
-                      className="bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-600"
-                    >
-                      Reject
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleDeletePost(post.id)}
-                    className="bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-600"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))
-          ) : (
-            <p className="text-stone-600">No user posts yet.</p>
+      {activeTab === 'practicalKhata' && (
+        <div className="space-y-8">
+          {renderEditor(
+            'Practical Khata',
+            practicalKhataForm,
+            setPracticalKhataForm,
+            handlePracticalKhataSubmit,
+            editingPracticalKhata,
+            () => {
+              setEditingPracticalKhata(null);
+              setPracticalKhataForm(emptyForm);
+            }
+          )}
+          {renderList(
+            'Practical Khata',
+            practicalKhata,
+            practicalKhataLoading,
+            (entry) => {
+              setEditingPracticalKhata(entry.id);
+              setPracticalKhataForm({
+                title: entry.title,
+                caption: entry.caption,
+                imageUrl: entry.imageUrl,
+                sortOrder: entry.sortOrder,
+              });
+            },
+            handleDeletePracticalKhata,
+            'No practical khata entries yet.'
           )}
         </div>
       )}

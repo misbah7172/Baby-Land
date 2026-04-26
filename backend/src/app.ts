@@ -10,6 +10,7 @@ import { redis, redisHealthCheck } from './lib/redis';
 import { errorHandler, notFoundHandler } from './middleware/error';
 import { adminRouter } from './routes/admin.routes';
 import { authRouter } from './routes/auth.routes';
+import { artRouter } from './routes/art.routes';
 import { cartRouter } from './routes/cart.routes';
 import { categoryRouter } from './routes/category.routes';
 import { orderRouter } from './routes/order.routes';
@@ -127,6 +128,7 @@ export function createApp() {
   app.use('/api/cart', cartRouter);
   app.use('/api/orders', orderRouter);
   app.use('/api/reviews', reviewRouter);
+  app.use('/api/art', artRouter);
   app.use('/api/settings', settingsRouter);
   app.use('/api/product-images', productImagesRouter);
   app.use('/api/admin', adminRouter);

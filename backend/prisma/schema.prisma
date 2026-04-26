@@ -262,3 +262,27 @@ model WishlistItem {
   @@unique([userId, productId])
   @@index([userId])
 }
+
+model ArtPortfolio {
+  id        String   @id @default(cuid())
+  title     String
+  caption   String   @db.Text
+  imageUrl  String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder, createdAt])
+}
+
+model PracticalKhata {
+  id        String   @id @default(cuid())
+  title     String
+  caption   String   @db.Text
+  imageUrl  String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder, createdAt])
+}

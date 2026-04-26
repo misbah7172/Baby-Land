@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 
 import { useLanguage } from '@/lib/language-context';
 import { getCopy } from '@/lib/i18n';
@@ -97,35 +96,11 @@ export default function ArtPortfolioPage() {
             ) : (
               <div className="text-center py-16">
                 <p className="text-stone-600 text-lg mb-6">
-                  No portfolio entries yet. Check back soon!
+                  No art portfolio entries yet. Check back soon!
                 </p>
-                <Link
-                  href="/art/post"
-                  className="inline-block bg-rosewood text-white px-6 py-3 rounded-full font-medium transition hover:bg-[#58342f]"
-                >
-                  Share Your Art
-                </Link>
               </div>
             )}
           </>
-        )}
-
-        {/* Explore User Art */}
-        {portfolio.length > 0 && (
-          <div className="mt-16 text-center">
-            <h2 className="text-2xl font-semibold text-rosewood mb-4">
-              {text.art.posts}
-            </h2>
-            <p className="text-stone-600 mb-6">
-              {text.art.posts_desc}
-            </p>
-            <Link
-              href="/art/posts"
-              className="inline-block bg-stone-200 text-stone-800 px-6 py-3 rounded-full font-medium transition hover:bg-stone-300"
-            >
-              View Community Art
-            </Link>
-          </div>
         )}
       </div>
     </div>

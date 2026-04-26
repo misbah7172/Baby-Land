@@ -128,6 +128,23 @@ export const translations = {
       shipped: 'Shipped',
       delivered: 'Delivered',
       cancelled: 'Cancelled'
+    },
+    art: {
+      others: 'Others',
+      portfolio: 'Art Portfolio',
+      portfolio_desc: 'Discover our practical khata collection',
+      posts: 'User Art',
+      posts_desc: 'Explore art from our community',
+      post_art: 'Post Your Art',
+      submit: 'Submit Art',
+      title: 'Title',
+      caption: 'Caption',
+      image: 'Image',
+      upload_image: 'Upload Image',
+      my_posts: 'My Posts',
+      pending_approval: 'Pending approval',
+      approved: 'Approved',
+      rejected: 'Rejected'
     }
   },
   bn: {
@@ -254,8 +271,23 @@ export const translations = {
       pending: 'অপেক্ষমাণ',
       shipped: 'পাঠানো হয়েছে',
       delivered: 'ডেলিভার হয়েছে',
-      cancelled: 'বাতিল'
-    }
+      cancelled: 'বাতিল'    },
+    art: {
+      others: 'অন্যান্য',
+      portfolio: 'আর্ট পোর্টফোলিও',
+      portfolio_desc: 'আমাদের প্রাকটিক্যাল খাতার সংগ্রহ দেখুন',
+      posts: 'ব্যবহারকারীর শিল্প',
+      posts_desc: 'আমাদের কমিউনিটির শিল্প অন্বেষণ করুন',
+      post_art: 'আপনার শিল্প শেয়ার করুন',
+      submit: 'শিল্প জমা দিন',
+      title: 'শিরোনাম',
+      caption: 'ক্যাপশন',
+      image: 'ছবি',
+      upload_image: 'ছবি আপলোড করুন',
+      my_posts: 'আমার পোস্ট',
+      pending_approval: 'অনুমোদনের জন্য অপেক্ষমাণ',
+      approved: 'অনুমোদিত',
+      rejected: 'প্রত্যাখ্যাত'    }
   }
 } as const;
 

@@ -18,6 +18,11 @@ const desktopNavLinks = [
   { href: '/profile', key: 'profile' }
 ] as const;
 
+const artLinks = [
+  { href: '/art/portfolio', key: 'portfolio' },
+  { href: '/art/post', key: 'post_art' }
+] as const;
+
 const mobileBottomNavLinks = [
   { href: '/', key: 'home' },
   { href: '/products', key: 'products' },
@@ -32,6 +37,7 @@ export function SiteHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [othersDropdownOpen, setOthersDropdownOpen] = useState(false);
   const text = getCopy(language);
 
   useEffect(() => {
@@ -77,6 +83,34 @@ export function SiteHeader() {
               )}
             </Link>
           ))}
+
+          {/* Others Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setOthersDropdownOpen(!othersDropdownOpen)}
+              className="transition hover:text-rosewood flex items-center gap-1"
+            >
+              {text.art.others}
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+            </button>
+            {othersDropdownOpen && (
+              <div className="absolute left-0 top-8 bg-white rounded-lg shadow-lg border border-[#FADADD] z-50 min-w-[180px]">
+                {artLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setOthersDropdownOpen(false)}
+                    className="block px-4 py-2 text-sm text-stone-600 hover:bg-[#FFE9E2] hover:text-rosewood transition first:rounded-t-lg last:rounded-b-lg"
+                  >
+                    {text.art[link.key as keyof typeof text.art]}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
@@ -142,6 +176,22 @@ export function SiteHeader() {
                 )}
               </Link>
             ))}
+
+            {/* Art Links in Mobile Menu */}
+            <div className="border-t border-white/60 mt-2 pt-2">
+              <p className="px-4 py-2 text-xs font-semibold text-stone-400 uppercase">{text.art.others}</p>
+              {artLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="rounded px-4 py-2 text-sm font-medium text-stone-600 transition hover:bg-blush-100 block"
+                >
+                  {text.art[link.key as keyof typeof text.art]}
+                </Link>
+              ))}
+            </div>
+
             <button
               type="button"
               onClick={handleToggleLanguage}

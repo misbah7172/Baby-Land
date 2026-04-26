@@ -439,3 +439,129 @@ export async function deleteAdminReview(reviewId: string) {
     headers: getAdminHeaders()
   }, backendApiBase);
 }
+
+// Art API functions
+export async function getArtPortfolio() {
+  return request<Array<{
+    id: string;
+    title: string;
+    caption: string;
+    imageUrl: string;
+    sortOrder: number;
+    createdAt: string;
+  }>>('/api/art/portfolio', undefined, backendApiBase);
+}
+
+export async function getApprovedArtPosts() {
+  return request<Array<{
+    id: string;
+    title: string;
+    caption: string;
+    imageUrl: string;
+    user: {
+      id: string;
+      name: string;
+      email: string;
+    };
+    createdAt: string;
+  }>>('/api/art/posts', undefined, backendApiBase);
+}
+
+export async function getMyArtPosts() {
+  return request<Array<{
+    id: string;
+    title: string;
+    caption: string;
+    imageUrl: string;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    createdAt: string;
+  }>>('/api/art/my-posts', undefined, backendApiBase);
+}
+
+export async function submitArtPost(payload: { title: string; caption: string; imageUrl: string }) {
+  return request<{
+    id: string;
+    title: string;
+    caption: string;
+    imageUrl: string;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    createdAt: string;
+  }>('/api/art/posts', { method: 'POST', body: JSON.stringify(payload) }, backendApiBase);
+}
+
+export async function getAdminArtPortfolio() {
+  return request<{
+    portfolio: Array<{
+      id: string;
+      title: string;
+      caption: string;
+      imageUrl: string;
+      sortOrder: number;
+      createdAt: string;
+    }>;
+  }>('/api/admin/art-portfolio', { headers: getAdminHeaders() }, backendApiBase);
+}
+
+export async function createAdminArtPortfolio(payload: { title: string; caption: string; imageUrl: string; sortOrder: number }) {
+  return request<{
+    id: string;
+    title: string;
+    caption: string;
+    imageUrl: string;
+    sortOrder: number;
+    createdAt: string;
+  }>('/api/admin/art-portfolio', { method: 'POST', headers: getAdminHeaders(), body: JSON.stringify(payload) }, backendApiBase);
+}
+
+export async function updateAdminArtPortfolio(id: string, payload: { title: string; caption: string; imageUrl: string; sortOrder: number }) {
+  return request<{
+    id: string;
+    title: string;
+    caption: string;
+    imageUrl: string;
+    sortOrder: number;
+    createdAt: string;
+  }>(`/api/admin/art-portfolio/${id}`, { method: 'PATCH', headers: getAdminHeaders(), body: JSON.stringify(payload) }, backendApiBase);
+}
+
+export async function deleteAdminArtPortfolio(id: string) {
+  return request<{ ok: boolean }>(`/api/admin/art-portfolio/${id}`, { method: 'DELETE', headers: getAdminHeaders() }, backendApiBase);
+}
+
+export async function getAdminArtPosts() {
+  return request<{
+    posts: Array<{
+      id: string;
+      title: string;
+      caption: string;
+      imageUrl: string;
+      status: 'PENDING' | 'APPROVED' | 'REJECTED';
+      createdAt: string;
+      user: {
+        id: string;
+        name: string;
+        email: string;
+      };
+    }>;
+  }>('/api/admin/art-posts', { headers: getAdminHeaders() }, backendApiBase);
+}
+
+export async function updateAdminArtPostStatus(id: string, status: 'APPROVED' | 'REJECTED') {
+  return request<{
+    id: string;
+    title: string;
+    caption: string;
+    imageUrl: string;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    createdAt: string;
+    user: {
+      id: string;
+      name: string;
+      email: string;
+    };
+  }>(`/api/admin/art-posts/${id}/status`, { method: 'PATCH', headers: getAdminHeaders(), body: JSON.stringify({ status }) }, backendApiBase);
+}
+
+export async function deleteAdminArtPost(id: string) {
+  return request<{ ok: boolean }>(`/api/admin/art-posts/${id}`, { method: 'DELETE', headers: getAdminHeaders() }, backendApiBase);
+}
